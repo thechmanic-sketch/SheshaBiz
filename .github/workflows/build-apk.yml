@@ -6,6 +6,9 @@ on:
       - claude/quickquote-sa-android-kxdu2i
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,3 +34,14 @@ jobs:
           name: app-release-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+      - name: Publish APK as a GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="apk-run-${{ github.run_number }}"
+          cp app/build/outputs/apk/release/app-release.apk "QuickQuoteSA-${TAG}.apk"
+          gh release create "$TAG" "QuickQuoteSA-${TAG}.apk" \
+            --repo "${{ github.repository }}" \
+            --title "QuickQuote SA — build ${{ github.run_number }}" \
+            --notes "Automated release build from commit ${{ github.sha }}."
