@@ -22,7 +22,7 @@ class AppContainer(context: Context) {
         appContext,
         AppDatabase::class.java,
         AppDatabase.DATABASE_NAME
-    ).fallbackToDestructiveMigration(dropAllTables = true).build()
+    ).fallbackToDestructiveMigration().build()
 
     val preferences = AppPreferences(appContext)
     val businessRepository = BusinessRepository(database.businessProfileDao())
