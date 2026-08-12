@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuickQuote SA</string>
+    <string name="app_tagline">Professional quotes in under 60 seconds.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Create professional quotes in under 60 seconds.</string>
+    <string name="onboarding_title_2">Create → PDF → WhatsApp</string>
+    <string name="onboarding_title_3">Built for South African small businesses.</string>
+    <string name="get_started">Get Started</string>
+    <string name="skip">Skip</string>
+    <string name="try_demo">Try Demo</string>
+
+    <!-- Business setup -->
+    <string name="setup_title">Set up your business</string>
+    <string name="setup_subtitle">This appears on every quote you send.</string>
+    <string name="business_name">Business name</string>
+    <string name="owner_name">Owner name</string>
+    <string name="phone">Phone</string>
+    <string name="whatsapp_number">WhatsApp number</string>
+    <string name="email">Email</string>
+    <string name="business_address">Business address</string>
+    <string name="vat_number_optional">VAT number (optional)</string>
+    <string name="logo_optional">Logo (optional)</string>
+    <string name="continue_label">Continue</string>
+    <string name="add_logo">Add logo</string>
+    <string name="change_logo">Change logo</string>
+    <string name="remove_logo">Remove logo</string>
+
+    <!-- Dashboard -->
+    <string name="good_morning">Good morning</string>
+    <string name="good_afternoon">Good afternoon</string>
+    <string name="good_evening">Good evening</string>
+    <string name="stat_quotes_created">Quotes created</string>
+    <string name="stat_quotes_sent">Quotes sent</string>
+    <string name="stat_quotes_accepted">Quotes accepted</string>
+    <string name="stat_total_quoted">Total quoted</string>
+    <string name="new_quote">+ New Quote</string>
+    <string name="recent_quotes">Recent quotes</string>
+    <string name="see_all">See all</string>
+
+    <!-- Nav -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_quotes">Quotes</string>
+    <string name="nav_customers">Customers</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Statuses -->
+    <string name="status_draft">Draft</string>
+    <string name="status_sent">Sent</string>
+    <string name="status_accepted">Accepted</string>
+    <string name="status_rejected">Rejected</string>
+    <string name="status_all">All</string>
+
+    <!-- Create quote -->
+    <string name="create_quote_title">New Quote</string>
+    <string name="edit_quote_title">Edit Quote</string>
+    <string name="customer_details">Customer</string>
+    <string name="select_existing_customer">Select existing customer</string>
+    <string name="add_new_customer">Add new customer</string>
+    <string name="customer_name">Customer name</string>
+    <string name="customer_phone">Customer phone</string>
+    <string name="customer_email">Customer email (optional)</string>
+    <string name="customer_address">Customer address (optional)</string>
+    <string name="quote_date">Quote date</string>
+    <string name="valid_until">Valid until</string>
+    <string name="items">Items</string>
+    <string name="add_item">+ Add item</string>
+    <string name="description">Description</string>
+    <string name="quantity">Qty</string>
+    <string name="unit_price">Unit price</string>
+    <string name="remove_item">Remove item</string>
+    <string name="vat_on_off">VAT (15%)</string>
+    <string name="discount">Discount</string>
+    <string name="discount_percent">Percentage</string>
+    <string name="discount_fixed">Fixed amount</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="vat">VAT</string>
+    <string name="total">Total</string>
+    <string name="notes_optional">Notes (optional)</string>
+    <string name="payment_terms">Payment terms</string>
+    <string name="save_quote">Save Quote</string>
+
+    <!-- Preview / actions -->
+    <string name="quotation">QUOTATION</string>
+    <string name="customer_label">CUSTOMER</string>
+    <string name="items_label">ITEMS</string>
+    <string name="thank_you_footer">Thank you for your business.</string>
+    <string name="download_pdf">Download PDF</string>
+    <string name="share_pdf">Share PDF</string>
+    <string name="send_via_whatsapp">Send via WhatsApp</string>
+    <string name="edit">Edit</string>
+    <string name="duplicate">Duplicate</string>
+    <string name="mark_as_sent">Mark as Sent</string>
+    <string name="mark_as_accepted">Mark as Accepted</string>
+    <string name="mark_as_rejected">Mark as Rejected</string>
+    <string name="delete">Delete</string>
+    <string name="delete_quote_confirm">Delete this quote? This can\'t be undone.</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Quotes list -->
+    <string name="search_quotes">Search by customer or quote number</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_oldest">Oldest</string>
+    <string name="sort_highest">Highest value</string>
+    <string name="sort_lowest">Lowest value</string>
+
+    <!-- Customers -->
+    <string name="customers_title">Customers</string>
+    <string name="add_customer">Add Customer</string>
+    <string name="edit_customer">Edit Customer</string>
+    <string name="save_customer">Save Customer</string>
+    <string name="no_customers_title">No customers yet</string>
+    <string name="no_customers_subtitle">Customers will appear here when you create quotes.</string>
+
+    <!-- Empty states -->
+    <string name="no_quotes_title">No quotes yet</string>
+    <string name="no_quotes_subtitle">Create your first professional quotation.</string>
+    <string name="create_quote_cta">Create Quote</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_business_profile">Business profile</string>
+    <string name="settings_vat">VAT settings</string>
+    <string name="settings_default_vat_rate">Default VAT rate</string>
+    <string name="settings_vat_enabled_default">VAT enabled by default</string>
+    <string name="settings_numbering">Quote numbering</string>
+    <string name="settings_prefix">Quote number prefix</string>
+    <string name="settings_next_number">Next number</string>
+    <string name="settings_payment_terms">Default payment terms</string>
+    <string name="settings_currency">Currency</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_export">Backup / Export data</string>
+    <string name="settings_import">Import data</string>
+    <string name="settings_about">About</string>
+    <string name="about_body">QuickQuote SA helps South African small businesses create professional quotations in under 60 seconds. All data stays on this device — nothing is sent to a server.</string>
+
+    <!-- Validation -->
+    <string name="error_required">This field is required.</string>
+    <string name="error_invalid_email">Enter a valid email address.</string>
+    <string name="error_invalid_price">Enter a valid price.</string>
+    <string name="error_invalid_quantity">Quantity must be greater than zero.</string>
+    <string name="error_add_one_item">Add at least one item.</string>
+</resources>

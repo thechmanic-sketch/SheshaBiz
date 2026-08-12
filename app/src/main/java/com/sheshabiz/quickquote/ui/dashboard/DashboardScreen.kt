@@ -1,0 +1,142 @@
+package com.sheshabiz.quickquote.ui.dashboard
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.sheshabiz.quickquote.R
+import com.sheshabiz.quickquote.domain.CurrencyFormat
+import com.sheshabiz.quickquote.ui.common.EmptyState
+import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
+import com.sheshabiz.quickquote.ui.common.QQTextActionButton
+import com.sheshabiz.quickquote.ui.common.QuoteRowItem
+import java.util.Calendar
+
+@Composable
+fun DashboardScreen(
+    viewModel: DashboardViewModel,
+    onNewQuote: () -> Unit,
+    onOpenQuote: (Long) -> Unit,
+    onSeeAllQuotes: () -> Unit
+) {
+    val state by viewModel.uiState.collectAsState()
+    val greeting = remember { greetingForCurrentTime() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        Spacer(Modifier.height(20.dp))
+        Text(text = greeting, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = state.businessName.ifBlank { stringResource(R.string.app_name) },
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(20.dp))
+
+        StatsGrid(state = state)
+        Spacer(Modifier.height(20.dp))
+
+        QQPrimaryButton(text = stringResource(R.string.new_quote), onClick = onNewQuote)
+        Spacer(Modifier.height(28.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.recent_quotes),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (state.recentQuotes.isNotEmpty()) {
+                QQTextActionButton(text = stringResource(R.string.see_all), onClick = onSeeAllQuotes)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        if (state.recentQuotes.isEmpty() && !state.isLoading) {
+            EmptyState(
+                title = stringResource(R.string.no_quotes_title),
+                subtitle = stringResource(R.string.no_quotes_subtitle),
+                actionLabel = stringResource(R.string.create_quote_cta),
+                onAction = onNewQuote
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                state.recentQuotes.forEach { quote ->
+                    QuoteRowItem(quote = quote, onClick = { onOpenQuote(quote.id) })
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun StatsGrid(state: DashboardUiState) {
+    val stats = listOf(
+        stringResource(R.string.stat_quotes_created) to state.quotesCreated.toString(),
+        stringResource(R.string.stat_quotes_sent) to state.quotesSent.toString(),
+        stringResource(R.string.stat_quotes_accepted) to state.quotesAccepted.toString(),
+        stringResource(R.string.stat_total_quoted) to CurrencyFormat.format(state.totalQuoted)
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        for (row in stats.chunked(2)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { (label, value) ->
+                    StatCard(label = label, value = value, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(14.dp))
+            .padding(16.dp)
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun greetingForCurrentTime(): String {
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    return when {
+        hour < 12 -> "Good morning"
+        hour < 18 -> "Good afternoon"
+        else -> "Good evening"
+    }
+}
