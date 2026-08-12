@@ -1,5 +1,7 @@
 package com.sheshabiz.quickquote.data.repository
 
+import androidx.room.withTransaction
+import com.sheshabiz.quickquote.data.db.AppDatabase
 import com.sheshabiz.quickquote.data.db.dao.QuoteDao
 import com.sheshabiz.quickquote.data.db.dao.QuoteItemDao
 import com.sheshabiz.quickquote.data.db.entity.Quote
@@ -7,12 +9,12 @@ import com.sheshabiz.quickquote.data.db.entity.QuoteItem
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 class QuoteRepository(
+    private val database: AppDatabase,
     private val quoteDao: QuoteDao,
     private val itemDao: QuoteItemDao
 ) {
@@ -35,30 +37,19 @@ class QuoteRepository(
             }
         }
 
-    fun observeAllWithItems(): Flow<List<QuoteWithItems>> =
-        quoteDao.observeAll().flatMapLatest { quotes ->
-            if (quotes.isEmpty()) {
-                kotlinx.coroutines.flow.flowOf(emptyList())
-            } else {
-                combine(quotes.map { quote -> itemDao.observeForQuote(quote.id).map { quote to it } }) { pairs ->
-                    pairs.map { (quote, items) -> QuoteWithItems(quote, items) }
-                }
-            }
-        }
-
     suspend fun getById(id: Long): Quote? = quoteDao.getById(id)
 
     suspend fun getItemsForQuote(quoteId: Long): List<QuoteItem> = itemDao.getForQuote(quoteId)
 
-    suspend fun createQuote(quote: Quote, items: List<QuoteItem>): Long {
+    suspend fun createQuote(quote: Quote, items: List<QuoteItem>): Long = database.withTransaction {
         val newId = quoteDao.insert(quote)
         itemDao.insertAll(items.mapIndexed { index, item ->
             item.copy(id = 0, quoteId = newId, sortOrder = index)
         })
-        return newId
+        newId
     }
 
-    suspend fun updateQuote(quote: Quote, items: List<QuoteItem>) {
+    suspend fun updateQuote(quote: Quote, items: List<QuoteItem>) = database.withTransaction {
         quoteDao.update(quote)
         itemDao.deleteForQuote(quote.id)
         itemDao.insertAll(items.mapIndexed { index, item ->
