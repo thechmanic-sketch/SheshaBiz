@@ -63,18 +63,16 @@ fun QuotesListScreen(
         )
         Spacer(Modifier.height(12.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            FilterRow(
-                selected = state.statusFilter,
-                onSelect = viewModel::onStatusFilterChange,
-                modifier = Modifier.weight(1f)
-            )
+        FilterRow(
+            selected = state.statusFilter,
+            onSelect = viewModel::onStatusFilterChange,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             SortMenu(selected = state.sortOption, onSelect = viewModel::onSortChange)
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         if (state.quotes.isEmpty() && !state.isLoading) {
             EmptyState(

@@ -188,7 +188,11 @@ class CreateQuoteViewModel(
         val s = _uiState.value
 
         val customerNameError = if (Validators.isBlank(s.customerName)) "Customer name is required." else null
-        val customerPhoneError = if (Validators.isBlank(s.customerPhone)) "Customer phone is required." else null
+        val customerPhoneError = when {
+            Validators.isBlank(s.customerPhone) -> "Customer phone is required."
+            !Validators.isValidPhone(s.customerPhone) -> "Enter a valid phone number."
+            else -> null
+        }
         val customerEmailError = if (!Validators.isValidEmail(s.customerEmail)) "Enter a valid email address." else null
 
         val validatedItems = s.items.map { item ->

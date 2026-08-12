@@ -107,7 +107,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
         NavHost(
             navController = navController,
             startDestination = Routes.SPLASH,
-            modifier = Modifier.padding(bottom = if (showBottomBar) padding.calculateBottomPadding() else 0.dp)
+            modifier = Modifier.padding(bottom = padding.calculateBottomPadding())
         ) {
             composable(Routes.SPLASH) {
                 SplashScreen(onFinished = {

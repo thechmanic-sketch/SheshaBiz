@@ -80,7 +80,11 @@ class BusinessSetupViewModel(
         val s = _uiState.value
         val businessNameError = if (Validators.isBlank(s.businessName)) "Business name is required." else null
         val ownerNameError = if (Validators.isBlank(s.ownerName)) "Owner name is required." else null
-        val phoneError = if (Validators.isBlank(s.phone)) "Phone number is required." else null
+        val phoneError = when {
+            Validators.isBlank(s.phone) -> "Phone number is required."
+            !Validators.isValidPhone(s.phone) -> "Enter a valid phone number."
+            else -> null
+        }
         val emailError = if (!Validators.isValidEmail(s.email)) "Enter a valid email address." else null
 
         if (listOf(businessNameError, ownerNameError, phoneError, emailError).any { it != null }) {
