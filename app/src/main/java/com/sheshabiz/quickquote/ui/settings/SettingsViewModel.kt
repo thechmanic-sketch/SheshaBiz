@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val businessProfile: BusinessProfile? = null,
     val quotePrefix: String = AppPreferences.DEFAULT_PREFIX,
+    val invoicePrefix: String = AppPreferences.DEFAULT_INVOICE_PREFIX,
     val vatEnabledDefault: Boolean = true,
     val vatRate: String = AppPreferences.DEFAULT_VAT_RATE.toString(),
     val paymentTerms: String = AppPreferences.DEFAULT_PAYMENT_TERMS,
@@ -30,6 +31,7 @@ class SettingsViewModel(
 ) : ViewModel() {
 
     private val quotePrefix = MutableStateFlow(preferences.quoteNumberPrefix)
+    private val invoicePrefix = MutableStateFlow(preferences.invoiceNumberPrefix)
     private val vatEnabledDefault = MutableStateFlow(preferences.defaultVatEnabled)
     private val vatRate = MutableStateFlow(preferences.vatRate.let(::formatNumber))
     private val paymentTerms = MutableStateFlow(preferences.defaultPaymentTerms)
@@ -37,15 +39,18 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = combine(
         businessRepository.observeProfile(),
         preferences.themeMode,
-        combine(quotePrefix, vatEnabledDefault, vatRate, paymentTerms) { p, v, r, t -> listOf(p, v, r, t) }
+        combine(quotePrefix, invoicePrefix, vatEnabledDefault, vatRate, paymentTerms) { qp, ip, v, r, t ->
+            listOf(qp, ip, v, r, t)
+        }
     ) { profile, theme, fields ->
         @Suppress("UNCHECKED_CAST")
         SettingsUiState(
             businessProfile = profile,
             quotePrefix = fields[0] as String,
-            vatEnabledDefault = fields[1] as Boolean,
-            vatRate = fields[2] as String,
-            paymentTerms = fields[3] as String,
+            invoicePrefix = fields[1] as String,
+            vatEnabledDefault = fields[2] as Boolean,
+            vatRate = fields[3] as String,
+            paymentTerms = fields[4] as String,
             themeMode = theme
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -57,6 +62,12 @@ class SettingsViewModel(
         val prefix = value.uppercase().ifBlank { AppPreferences.DEFAULT_PREFIX }
         preferences.quoteNumberPrefix = prefix
         quotePrefix.value = prefix
+    }
+
+    fun onInvoicePrefixChange(value: String) {
+        val prefix = value.uppercase().ifBlank { AppPreferences.DEFAULT_INVOICE_PREFIX }
+        preferences.invoiceNumberPrefix = prefix
+        invoicePrefix.value = prefix
     }
 
     fun onVatDefaultChange(enabled: Boolean) {

@@ -2,6 +2,7 @@ package com.sheshabiz.quickquote.data.db
 
 import androidx.room.TypeConverter
 import com.sheshabiz.quickquote.data.db.entity.DiscountType
+import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 
 class Converters {
@@ -16,4 +17,10 @@ class Converters {
 
     @TypeConverter
     fun toDiscountType(value: String): DiscountType = DiscountType.valueOf(value)
+
+    @TypeConverter
+    fun fromInvoiceStatus(value: InvoiceStatus): String = value.name
+
+    @TypeConverter
+    fun toInvoiceStatus(value: String): InvoiceStatus = InvoiceStatus.valueOf(value)
 }

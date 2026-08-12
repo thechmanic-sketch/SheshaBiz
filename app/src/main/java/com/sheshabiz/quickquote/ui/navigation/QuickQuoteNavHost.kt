@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,12 @@ import com.sheshabiz.quickquote.ui.customers.CustomersScreen
 import com.sheshabiz.quickquote.ui.customers.CustomersViewModel
 import com.sheshabiz.quickquote.ui.dashboard.DashboardScreen
 import com.sheshabiz.quickquote.ui.dashboard.DashboardViewModel
+import com.sheshabiz.quickquote.ui.invoice.create.CreateInvoiceScreen
+import com.sheshabiz.quickquote.ui.invoice.create.CreateInvoiceViewModel
+import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewScreen
+import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewViewModel
+import com.sheshabiz.quickquote.ui.invoices.InvoicesListScreen
+import com.sheshabiz.quickquote.ui.invoices.InvoicesListViewModel
 import com.sheshabiz.quickquote.ui.onboarding.OnboardingScreen
 import com.sheshabiz.quickquote.ui.quote.create.CreateQuoteScreen
 import com.sheshabiz.quickquote.ui.quote.create.CreateQuoteViewModel
@@ -56,6 +63,7 @@ private data class BottomTab(val route: String, val labelRes: Int, val icon: and
 private val bottomTabs = listOf(
     BottomTab(Routes.DASHBOARD, R.string.nav_dashboard, Icons.Filled.Dashboard),
     BottomTab(Routes.QUOTES, R.string.nav_quotes, Icons.Filled.ReceiptLong),
+    BottomTab(Routes.INVOICES, R.string.nav_invoices, Icons.Filled.RequestQuote),
     BottomTab(Routes.CUSTOMERS, R.string.nav_customers, Icons.Filled.People),
     BottomTab(Routes.SETTINGS, R.string.nav_settings, Icons.Filled.Settings)
 )
@@ -199,6 +207,17 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
             }
 
+            composable(Routes.INVOICES) {
+                val vm = viewModel<InvoicesListViewModel>(
+                    factory = viewModelFactory { InvoicesListViewModel(container.invoiceRepository) }
+                )
+                InvoicesListScreen(
+                    viewModel = vm,
+                    onOpenInvoice = { id -> navController.navigate(Routes.invoicePreview(id)) },
+                    onNewInvoice = { navController.navigate(Routes.createInvoice()) }
+                )
+            }
+
             composable(Routes.CUSTOMERS) {
                 val vm = viewModel<CustomersViewModel>(
                     factory = viewModelFactory { CustomersViewModel(container.customerRepository) }
@@ -259,6 +278,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             quoteId = quoteId,
                             quoteRepository = container.quoteRepository,
                             businessRepository = container.businessRepository,
+                            invoiceRepository = container.invoiceRepository,
                             preferences = container.preferences,
                             pdfGenerator = container.pdfGenerator
                         )
@@ -272,6 +292,9 @@ fun QuickQuoteNavHost(container: AppContainer) {
                         navController.navigate(Routes.quotePreview(newId)) {
                             popUpTo(Routes.QUOTE_PREVIEW_PATTERN) { inclusive = true }
                         }
+                    },
+                    onConvertedToInvoice = { invoiceId ->
+                        navController.navigate(Routes.invoicePreview(invoiceId))
                     },
                     onDeleted = { navController.popBackStack() }
                 )
@@ -292,6 +315,55 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     isEditing = customerId != null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.CREATE_INVOICE_PATTERN,
+                arguments = listOf(navArgument(Routes.INVOICE_ARG) { type = NavType.LongType; defaultValue = -1L })
+            ) { entry ->
+                val invoiceIdArg = entry.arguments?.getLong(Routes.INVOICE_ARG) ?: -1L
+                val invoiceId = invoiceIdArg.takeIf { it > 0 }
+                val vm = viewModel<CreateInvoiceViewModel>(
+                    key = "create_invoice_$invoiceIdArg",
+                    factory = viewModelFactory {
+                        CreateInvoiceViewModel(container.invoiceRepository, container.customerRepository, container.preferences, invoiceId)
+                    }
+                )
+                CreateInvoiceScreen(
+                    viewModel = vm,
+                    customerRepository = container.customerRepository,
+                    isEditing = invoiceId != null,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { savedId ->
+                        navController.navigate(Routes.invoicePreview(savedId)) {
+                            popUpTo(Routes.CREATE_INVOICE_PATTERN) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.INVOICE_PREVIEW_PATTERN,
+                arguments = listOf(navArgument(Routes.INVOICE_ARG) { type = NavType.LongType })
+            ) { entry ->
+                val invoiceId = entry.arguments?.getLong(Routes.INVOICE_ARG) ?: 0L
+                val vm = viewModel<InvoicePreviewViewModel>(
+                    key = "invoice_preview_$invoiceId",
+                    factory = viewModelFactory {
+                        InvoicePreviewViewModel(
+                            invoiceId = invoiceId,
+                            invoiceRepository = container.invoiceRepository,
+                            businessRepository = container.businessRepository,
+                            pdfGenerator = container.pdfGenerator
+                        )
+                    }
+                )
+                InvoicePreviewScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(Routes.createInvoice(id)) },
+                    onDeleted = { navController.popBackStack() }
                 )
             }
         }

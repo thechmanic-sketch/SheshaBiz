@@ -14,14 +14,20 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
 import com.sheshabiz.quickquote.data.db.entity.DiscountType
+import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
+import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
+import com.sheshabiz.quickquote.domain.model.DocumentKind
+import com.sheshabiz.quickquote.domain.model.InvoiceWithItems
+import com.sheshabiz.quickquote.domain.model.PrintableDocument
+import com.sheshabiz.quickquote.domain.model.PrintableItem
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
 import java.io.File
 import java.io.FileOutputStream
 
 /**
- * Renders a quotation as a professional, print-ready A4 PDF using Android's native
- * PDF APIs only (no third-party library). Handles multi-page overflow when a quote
- * has many line items or a long description.
+ * Renders a quotation or invoice as a professional, print-ready A4 PDF using Android's
+ * native PDF APIs only (no third-party library). Handles multi-page overflow when a
+ * document has many line items or a long description.
  */
 class PdfGenerator(private val context: Context) {
 
@@ -37,21 +43,82 @@ class PdfGenerator(private val context: Context) {
     private val dividerColor = Color.parseColor("#E7E7E3")
     private val tableHeaderBg = Color.parseColor("#EAF6F3")
 
-    fun generate(profile: BusinessProfile, data: QuoteWithItems): File {
+    fun generateForQuote(profile: BusinessProfile, data: QuoteWithItems): File {
         val quote = data.quote
-        val doc = PdfDocument()
+        val document = PrintableDocument(
+            kind = DocumentKind.QUOTATION,
+            number = quote.quoteNumber,
+            primaryDate = quote.quoteDate,
+            secondaryDateLabel = "VALID UNTIL",
+            secondaryDate = quote.validUntil,
+            statusLabel = if (quote.status == QuoteStatus.DRAFT) null else quote.status.name,
+            customerName = quote.customerName,
+            customerPhone = quote.customerPhone,
+            customerEmail = quote.customerEmail,
+            customerAddress = quote.customerAddress,
+            items = data.items.sortedBy { it.sortOrder }.map {
+                PrintableItem(it.description, it.quantity, it.unitPrice, it.lineTotal, it.sortOrder)
+            },
+            vatEnabled = quote.vatEnabled,
+            vatRate = quote.vatRate,
+            discountType = quote.discountType,
+            discountValue = quote.discountValue,
+            subtotal = quote.subtotal,
+            discountAmount = quote.discountAmount,
+            vatAmount = quote.vatAmount,
+            total = quote.total,
+            notes = quote.notes,
+            paymentTerms = quote.paymentTerms
+        )
+        return render(profile, document)
+    }
+
+    fun generateForInvoice(profile: BusinessProfile, data: InvoiceWithItems): File {
+        val invoice = data.invoice
+        val document = PrintableDocument(
+            kind = DocumentKind.INVOICE,
+            number = invoice.invoiceNumber,
+            primaryDate = invoice.invoiceDate,
+            secondaryDateLabel = "DUE DATE",
+            secondaryDate = invoice.dueDate,
+            statusLabel = if (invoice.status == InvoiceStatus.PAID) "PAID" else "UNPAID",
+            customerName = invoice.customerName,
+            customerPhone = invoice.customerPhone,
+            customerEmail = invoice.customerEmail,
+            customerAddress = invoice.customerAddress,
+            items = data.items.sortedBy { it.sortOrder }.map {
+                PrintableItem(it.description, it.quantity, it.unitPrice, it.lineTotal, it.sortOrder)
+            },
+            vatEnabled = invoice.vatEnabled,
+            vatRate = invoice.vatRate,
+            discountType = invoice.discountType,
+            discountValue = invoice.discountValue,
+            subtotal = invoice.subtotal,
+            discountAmount = invoice.discountAmount,
+            vatAmount = invoice.vatAmount,
+            total = invoice.total,
+            notes = invoice.notes,
+            paymentTerms = invoice.paymentTerms
+        )
+        return render(profile, document)
+    }
+
+    fun fileFor(kind: DocumentKind, number: String): File = outputFile(kind, number)
+
+    private fun render(profile: BusinessProfile, doc: PrintableDocument): File {
+        val pdfDoc = PdfDocument()
 
         var pageNumber = 1
         var pageInfo = PdfDocument.PageInfo.Builder(pageWidth.toInt(), pageHeight.toInt(), pageNumber).create()
-        var page = doc.startPage(pageInfo)
+        var page = pdfDoc.startPage(pageInfo)
         var canvas = page.canvas
         var y = margin
 
         fun startNewPage() {
-            doc.finishPage(page)
+            pdfDoc.finishPage(page)
             pageNumber++
             pageInfo = PdfDocument.PageInfo.Builder(pageWidth.toInt(), pageHeight.toInt(), pageNumber).create()
-            page = doc.startPage(pageInfo)
+            page = pdfDoc.startPage(pageInfo)
             canvas = page.canvas
             y = margin
         }
@@ -92,19 +159,23 @@ class PdfGenerator(private val context: Context) {
         drawDivider(canvas, y)
         y += 20f
 
-        // ---- Quotation meta ----
+        // ---- Document meta ----
         val titleP = textPaint(18f, true, brandColor)
-        canvas.drawText("QUOTATION", margin, y + 14f, titleP)
+        canvas.drawText(doc.kind.label, margin, y + 14f, titleP)
+        doc.statusLabel?.let {
+            val badgePaint = textPaint(10f, true, mutedColor)
+            canvas.drawTextRightAligned(it, margin + contentWidth, y + 12f, badgePaint)
+        }
         val metaLabel = textPaint(9.5f, false, mutedColor)
         val metaValue = textPaint(11f, true, textColor)
         val col2 = margin + 220f
         val col3 = margin + 360f
-        canvas.drawText("QUOTE NUMBER", margin, y + 34f, metaLabel)
-        canvas.drawText(quote.quoteNumber, margin, y + 48f, metaValue)
+        canvas.drawText("${doc.kind.label} NUMBER", margin, y + 34f, metaLabel)
+        canvas.drawText(doc.number, margin, y + 48f, metaValue)
         canvas.drawText("DATE", col2, y + 34f, metaLabel)
-        canvas.drawText(CurrencyFormat.formatDate(quote.quoteDate), col2, y + 48f, metaValue)
-        canvas.drawText("VALID UNTIL", col3, y + 34f, metaLabel)
-        canvas.drawText(CurrencyFormat.formatDate(quote.validUntil), col3, y + 48f, metaValue)
+        canvas.drawText(CurrencyFormat.formatDate(doc.primaryDate), col2, y + 48f, metaValue)
+        canvas.drawText(doc.secondaryDateLabel, col3, y + 34f, metaLabel)
+        canvas.drawText(CurrencyFormat.formatDate(doc.secondaryDate), col3, y + 48f, metaValue)
         y += 62f
 
         drawDivider(canvas, y)
@@ -115,13 +186,13 @@ class PdfGenerator(private val context: Context) {
         canvas.drawText("CUSTOMER", margin, y, sectionLabel)
         y += 16f
         val custName = textPaint(13f, true, textColor)
-        canvas.drawText(quote.customerName, margin, y, custName)
+        canvas.drawText(doc.customerName, margin, y, custName)
         y += 16f
         val custDetail = textPaint(11f, false, textColor)
         val customerLines = listOfNotNull(
-            quote.customerPhone.takeIf { it.isNotBlank() },
-            quote.customerEmail?.takeIf { it.isNotBlank() },
-            quote.customerAddress?.takeIf { it.isNotBlank() }
+            doc.customerPhone.takeIf { it.isNotBlank() },
+            doc.customerEmail?.takeIf { it.isNotBlank() },
+            doc.customerAddress?.takeIf { it.isNotBlank() }
         )
         for (line in customerLines) {
             canvas.drawText(line, margin, y, custDetail)
@@ -158,7 +229,7 @@ class PdfGenerator(private val context: Context) {
         }
         val rowValuePaint = textPaint(11f, false, textColor)
 
-        for (item in data.items.sortedBy { it.sortOrder }) {
+        for (item in doc.items.sortedBy { it.sortOrder }) {
             val layout = StaticLayout.Builder
                 .obtain(item.description, 0, item.description.length, itemDescPaint, descColWidth.toInt())
                 .setAlignment(Layout.Alignment.ALIGN_NORMAL)
@@ -170,7 +241,7 @@ class PdfGenerator(private val context: Context) {
             if (y == margin) {
                 // We just started a fresh continuation page mid-table: redraw header.
                 val cont = textPaint(11f, true, mutedColor)
-                canvas.drawText("${quote.quoteNumber} (continued)", margin, y, cont)
+                canvas.drawText("${doc.number} (continued)", margin, y, cont)
                 y += 18f
                 drawTableHeader()
                 ensureSpace(rowHeight)
@@ -181,7 +252,7 @@ class PdfGenerator(private val context: Context) {
             layout.draw(canvas)
             canvas.restore()
 
-            val qtyText = formatQuantity(item.quantity)
+            val qtyText = formatNumber(item.quantity)
             canvas.drawText(qtyText, colQtyX, y + 12f, rowValuePaint)
             canvas.drawText(CurrencyFormat.format(item.unitPrice), colPriceX, y + 12f, rowValuePaint)
             canvas.drawText(CurrencyFormat.format(item.lineTotal), colTotalX, y + 12f, rowValuePaint)
@@ -194,7 +265,7 @@ class PdfGenerator(private val context: Context) {
         y += 12f
 
         // ---- Totals ----
-        val totalsHeight = 24f * (2 + (if (quote.discountAmount > 0) 1 else 0) + (if (quote.vatEnabled) 1 else 0)) + 20f
+        val totalsHeight = 24f * (2 + (if (doc.discountAmount > 0) 1 else 0) + (if (doc.vatEnabled) 1 else 0)) + 20f
         ensureSpace(totalsHeight)
 
         val totalsX = margin + contentWidth - 200f
@@ -203,21 +274,21 @@ class PdfGenerator(private val context: Context) {
         val totalValue = textPaint(11f, false, textColor)
 
         canvas.drawText("Subtotal", totalsX, y, totalLabel)
-        canvas.drawTextRightAligned(CurrencyFormat.format(quote.subtotal), totalsValueX, y, totalValue)
+        canvas.drawTextRightAligned(CurrencyFormat.format(doc.subtotal), totalsValueX, y, totalValue)
         y += 20f
 
-        if (quote.discountAmount > 0) {
-            val label = if (quote.discountType == DiscountType.PERCENT) {
-                "Discount (${trimNumber(quote.discountValue)}%)"
+        if (doc.discountAmount > 0) {
+            val label = if (doc.discountType == DiscountType.PERCENT) {
+                "Discount (${formatNumber(doc.discountValue)}%)"
             } else "Discount"
             canvas.drawText(label, totalsX, y, totalLabel)
-            canvas.drawTextRightAligned("-${CurrencyFormat.format(quote.discountAmount)}", totalsValueX, y, totalValue)
+            canvas.drawTextRightAligned("-${CurrencyFormat.format(doc.discountAmount)}", totalsValueX, y, totalValue)
             y += 20f
         }
 
-        if (quote.vatEnabled) {
-            canvas.drawText("VAT (${trimNumber(quote.vatRate)}%)", totalsX, y, totalLabel)
-            canvas.drawTextRightAligned(CurrencyFormat.format(quote.vatAmount), totalsValueX, y, totalValue)
+        if (doc.vatEnabled) {
+            canvas.drawText("VAT (${formatNumber(doc.vatRate)}%)", totalsX, y, totalLabel)
+            canvas.drawTextRightAligned(CurrencyFormat.format(doc.vatAmount), totalsValueX, y, totalValue)
             y += 20f
         }
 
@@ -227,13 +298,13 @@ class PdfGenerator(private val context: Context) {
         val totalLabelWhite = textPaint(12f, true, Color.WHITE)
         val totalValueWhite = textPaint(15f, true, Color.WHITE)
         canvas.drawText("TOTAL", totalsX, y + 15f, totalLabelWhite)
-        canvas.drawTextRightAligned(CurrencyFormat.format(quote.total), totalsValueX - 6f, y + 16f, totalValueWhite)
+        canvas.drawTextRightAligned(CurrencyFormat.format(doc.total), totalsValueX - 6f, y + 16f, totalValueWhite)
         y += 42f
 
         // ---- Notes / payment terms ----
         val notesAndTerms = listOfNotNull(
-            quote.paymentTerms?.takeIf { it.isNotBlank() }?.let { "Payment terms" to it },
-            quote.notes?.takeIf { it.isNotBlank() }?.let { "Notes" to it }
+            doc.paymentTerms?.takeIf { it.isNotBlank() }?.let { "Payment terms" to it },
+            doc.notes?.takeIf { it.isNotBlank() }?.let { "Notes" to it }
         )
         for ((label, text) in notesAndTerms) {
             val bodyPaint = TextPaint().apply { isAntiAlias = true; textSize = 10.5f; color = textColor }
@@ -256,20 +327,18 @@ class PdfGenerator(private val context: Context) {
         val footerPaint = textPaint(11f, false, mutedColor)
         canvas.drawCenteredText("Thank you for your business.", pageWidth / 2f, y + 10f, footerPaint)
 
-        doc.finishPage(page)
+        pdfDoc.finishPage(page)
 
-        val outFile = outputFile(quote.quoteNumber)
-        FileOutputStream(outFile).use { doc.writeTo(it) }
-        doc.close()
+        val outFile = outputFile(doc.kind, doc.number)
+        FileOutputStream(outFile).use { pdfDoc.writeTo(it) }
+        pdfDoc.close()
         return outFile
     }
 
-    fun fileForQuote(quoteNumber: String): File = outputFile(quoteNumber)
-
-    private fun outputFile(quoteNumber: String): File {
-        val dir = File(context.cacheDir, "quotes").apply { mkdirs() }
-        val safeName = quoteNumber.replace(Regex("[^A-Za-z0-9-]"), "_")
-        return File(dir, "Quote-$safeName.pdf")
+    private fun outputFile(kind: DocumentKind, number: String): File {
+        val dir = File(context.cacheDir, "documents").apply { mkdirs() }
+        val safeName = number.replace(Regex("[^A-Za-z0-9-]"), "_")
+        return File(dir, "${kind.fileNamePrefix}-$safeName.pdf")
     }
 
     private fun decodeLogo(logoUri: String?): Bitmap? {
@@ -318,9 +387,6 @@ class PdfGenerator(private val context: Context) {
         drawText(text, xCenter - width / 2f, y, paint)
     }
 
-    private fun formatQuantity(value: Double): String =
-        if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
-
-    private fun trimNumber(value: Double): String =
+    private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
 }

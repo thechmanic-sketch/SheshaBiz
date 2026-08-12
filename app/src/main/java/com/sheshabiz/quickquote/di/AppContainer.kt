@@ -7,6 +7,7 @@ import com.sheshabiz.quickquote.data.db.AppDatabase
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
+import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.domain.BackupService
 import com.sheshabiz.quickquote.domain.DemoDataSeeder
@@ -21,15 +22,16 @@ class AppContainer(context: Context) {
         appContext,
         AppDatabase::class.java,
         AppDatabase.DATABASE_NAME
-    ).build()
+    ).fallbackToDestructiveMigration(dropAllTables = true).build()
 
     val preferences = AppPreferences(appContext)
     val businessRepository = BusinessRepository(database.businessProfileDao())
     val customerRepository = CustomerRepository(database.customerDao())
     val quoteRepository = QuoteRepository(database, database.quoteDao(), database.quoteItemDao())
+    val invoiceRepository = InvoiceRepository(database, database.invoiceDao(), database.invoiceItemDao())
     val pdfGenerator = PdfGenerator(appContext)
     val demoDataSeeder = DemoDataSeeder(businessRepository, customerRepository, quoteRepository, preferences)
-    val backupService = BackupService(businessRepository, customerRepository, quoteRepository)
+    val backupService = BackupService(businessRepository, customerRepository, quoteRepository, invoiceRepository)
 
     suspend fun copyLogo(uri: Uri): String? = copyLogoToInternalStorage(appContext, uri)
 }

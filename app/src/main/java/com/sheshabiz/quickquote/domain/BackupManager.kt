@@ -3,6 +3,9 @@ package com.sheshabiz.quickquote.domain
 import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
 import com.sheshabiz.quickquote.data.db.entity.Customer
 import com.sheshabiz.quickquote.data.db.entity.DiscountType
+import com.sheshabiz.quickquote.data.db.entity.Invoice
+import com.sheshabiz.quickquote.data.db.entity.InvoiceItem
+import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.Quote
 import com.sheshabiz.quickquote.data.db.entity.QuoteItem
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
@@ -13,17 +16,20 @@ data class BackupData(
     val businessProfile: BusinessProfile?,
     val customers: List<Customer>,
     val quotes: List<Quote>,
-    val itemsByQuoteIndex: List<List<QuoteItem>>
+    val itemsByQuoteIndex: List<List<QuoteItem>>,
+    val invoices: List<Invoice>,
+    val itemsByInvoiceIndex: List<List<InvoiceItem>>
 )
 
 /** Exports/imports the app's full local data set as a single human-readable JSON file. */
 object BackupManager {
-    private const val SCHEMA_VERSION = 1
+    private const val SCHEMA_VERSION = 2
 
     fun export(
         profile: BusinessProfile?,
         customers: List<Customer>,
-        quotesWithItems: List<Pair<Quote, List<QuoteItem>>>
+        quotesWithItems: List<Pair<Quote, List<QuoteItem>>>,
+        invoicesWithItems: List<Pair<Invoice, List<InvoiceItem>>>
     ): String {
         val root = JSONObject()
         root.put("schemaVersion", SCHEMA_VERSION)
@@ -79,15 +85,13 @@ object BackupManager {
                 put("status", quote.status.name)
                 put("createdAt", quote.createdAt)
                 put("updatedAt", quote.updatedAt)
-                put("items", JSONArray().apply {
-                    items.forEach { item ->
-                        put(JSONObject().apply {
-                            put("description", item.description)
-                            put("quantity", item.quantity)
-                            put("unitPrice", item.unitPrice)
-                            put("lineTotal", item.lineTotal)
-                            put("sortOrder", item.sortOrder)
-                        })
+                put("items", itemsToJson(items) { item ->
+                    JSONObject().apply {
+                        put("description", item.description)
+                        put("quantity", item.quantity)
+                        put("unitPrice", item.unitPrice)
+                        put("lineTotal", item.lineTotal)
+                        put("sortOrder", item.sortOrder)
                     }
                 })
             }
@@ -95,7 +99,52 @@ object BackupManager {
         }
         root.put("quotes", quotesArray)
 
+        val invoicesArray = JSONArray()
+        invoicesWithItems.forEach { (invoice, items) ->
+            val invoiceJson = JSONObject().apply {
+                put("invoiceNumber", invoice.invoiceNumber)
+                put("customerLocalId", invoice.customerId ?: JSONObject.NULL)
+                put("customerName", invoice.customerName)
+                put("customerPhone", invoice.customerPhone)
+                put("customerEmail", invoice.customerEmail)
+                put("customerAddress", invoice.customerAddress)
+                put("invoiceDate", invoice.invoiceDate)
+                put("dueDate", invoice.dueDate)
+                put("vatEnabled", invoice.vatEnabled)
+                put("vatRate", invoice.vatRate)
+                put("discountType", invoice.discountType.name)
+                put("discountValue", invoice.discountValue)
+                put("subtotal", invoice.subtotal)
+                put("discountAmount", invoice.discountAmount)
+                put("vatAmount", invoice.vatAmount)
+                put("total", invoice.total)
+                put("notes", invoice.notes)
+                put("paymentTerms", invoice.paymentTerms)
+                put("status", invoice.status.name)
+                put("paidAt", invoice.paidAt ?: JSONObject.NULL)
+                put("createdAt", invoice.createdAt)
+                put("updatedAt", invoice.updatedAt)
+                put("items", itemsToJson(items) { item ->
+                    JSONObject().apply {
+                        put("description", item.description)
+                        put("quantity", item.quantity)
+                        put("unitPrice", item.unitPrice)
+                        put("lineTotal", item.lineTotal)
+                        put("sortOrder", item.sortOrder)
+                    }
+                })
+            }
+            invoicesArray.put(invoiceJson)
+        }
+        root.put("invoices", invoicesArray)
+
         return root.toString(2)
+    }
+
+    private fun <T> itemsToJson(items: List<T>, toJson: (T) -> JSONObject): JSONArray {
+        val array = JSONArray()
+        items.forEach { array.put(toJson(it)) }
+        return array
     }
 
     fun import(json: String): BackupData {
@@ -158,25 +207,70 @@ object BackupManager {
                     updatedAt = q.optLong("updatedAt", System.currentTimeMillis())
                 )
             )
-            val itemsJson = q.optJSONArray("items") ?: JSONArray()
-            val items = mutableListOf<QuoteItem>()
-            for (j in 0 until itemsJson.length()) {
-                val it = itemsJson.getJSONObject(j)
-                items.add(
-                    QuoteItem(
-                        quoteId = 0,
-                        description = it.optString("description"),
-                        quantity = it.optDouble("quantity", 0.0),
-                        unitPrice = it.optDouble("unitPrice", 0.0),
-                        lineTotal = it.optDouble("lineTotal", 0.0),
-                        sortOrder = it.optInt("sortOrder", j)
-                    )
-                )
-            }
-            itemsByQuoteIndex.add(items)
+            itemsByQuoteIndex.add(parseItems(q.optJSONArray("items")) { desc, qty, price, total, order ->
+                QuoteItem(quoteId = 0, description = desc, quantity = qty, unitPrice = price, lineTotal = total, sortOrder = order)
+            })
         }
 
-        return BackupData(profile, localIdToCustomer.values.toList(), quotes, itemsByQuoteIndex)
+        val invoicesJson = root.optJSONArray("invoices") ?: JSONArray()
+        val invoices = mutableListOf<Invoice>()
+        val itemsByInvoiceIndex = mutableListOf<List<InvoiceItem>>()
+        for (i in 0 until invoicesJson.length()) {
+            val inv = invoicesJson.getJSONObject(i)
+            invoices.add(
+                Invoice(
+                    invoiceNumber = inv.optString("invoiceNumber"),
+                    sourceQuoteId = null,
+                    customerId = null,
+                    customerName = inv.optString("customerName"),
+                    customerPhone = inv.optString("customerPhone"),
+                    customerEmail = inv.optStringOrNull("customerEmail"),
+                    customerAddress = inv.optStringOrNull("customerAddress"),
+                    invoiceDate = inv.optLong("invoiceDate"),
+                    dueDate = inv.optLong("dueDate"),
+                    vatEnabled = inv.optBoolean("vatEnabled", true),
+                    vatRate = inv.optDouble("vatRate", 15.0),
+                    discountType = runCatching { DiscountType.valueOf(inv.optString("discountType")) }.getOrDefault(DiscountType.PERCENT),
+                    discountValue = inv.optDouble("discountValue", 0.0),
+                    subtotal = inv.optDouble("subtotal", 0.0),
+                    discountAmount = inv.optDouble("discountAmount", 0.0),
+                    vatAmount = inv.optDouble("vatAmount", 0.0),
+                    total = inv.optDouble("total", 0.0),
+                    notes = inv.optStringOrNull("notes"),
+                    paymentTerms = inv.optStringOrNull("paymentTerms"),
+                    status = runCatching { InvoiceStatus.valueOf(inv.optString("status")) }.getOrDefault(InvoiceStatus.UNPAID),
+                    paidAt = if (inv.isNull("paidAt")) null else inv.optLong("paidAt"),
+                    createdAt = inv.optLong("createdAt", System.currentTimeMillis()),
+                    updatedAt = inv.optLong("updatedAt", System.currentTimeMillis())
+                )
+            )
+            itemsByInvoiceIndex.add(parseItems(inv.optJSONArray("items")) { desc, qty, price, total, order ->
+                InvoiceItem(invoiceId = 0, description = desc, quantity = qty, unitPrice = price, lineTotal = total, sortOrder = order)
+            })
+        }
+
+        return BackupData(profile, localIdToCustomer.values.toList(), quotes, itemsByQuoteIndex, invoices, itemsByInvoiceIndex)
+    }
+
+    private fun <T> parseItems(
+        itemsJson: JSONArray?,
+        build: (description: String, quantity: Double, unitPrice: Double, lineTotal: Double, sortOrder: Int) -> T
+    ): List<T> {
+        val array = itemsJson ?: JSONArray()
+        val result = mutableListOf<T>()
+        for (j in 0 until array.length()) {
+            val it = array.getJSONObject(j)
+            result.add(
+                build(
+                    it.optString("description"),
+                    it.optDouble("quantity", 0.0),
+                    it.optDouble("unitPrice", 0.0),
+                    it.optDouble("lineTotal", 0.0),
+                    it.optInt("sortOrder", j)
+                )
+            )
+        }
+        return result
     }
 
     private fun JSONObject.optStringOrNull(key: String): String? =

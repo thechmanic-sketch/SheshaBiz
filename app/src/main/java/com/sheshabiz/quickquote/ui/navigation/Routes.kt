@@ -7,6 +7,7 @@ object Routes {
 
     const val DASHBOARD = "dashboard"
     const val QUOTES = "quotes"
+    const val INVOICES = "invoices"
     const val CUSTOMERS = "customers"
     const val SETTINGS = "settings"
 
@@ -25,6 +26,16 @@ object Routes {
     fun customerEdit(customerId: Long? = null) =
         if (customerId == null) "$CUSTOMER_EDIT?$CUSTOMER_ARG=-1" else "$CUSTOMER_EDIT?$CUSTOMER_ARG=$customerId"
     const val CUSTOMER_EDIT_PATTERN = "$CUSTOMER_EDIT?$CUSTOMER_ARG={$CUSTOMER_ARG}"
+
+    const val CREATE_INVOICE = "invoice_edit"
+    const val INVOICE_ARG = "invoiceId"
+    fun createInvoice(invoiceId: Long? = null) =
+        if (invoiceId == null) "$CREATE_INVOICE?$INVOICE_ARG=-1" else "$CREATE_INVOICE?$INVOICE_ARG=$invoiceId"
+    const val CREATE_INVOICE_PATTERN = "$CREATE_INVOICE?$INVOICE_ARG={$INVOICE_ARG}"
+
+    const val INVOICE_PREVIEW = "invoice_preview"
+    fun invoicePreview(invoiceId: Long) = "$INVOICE_PREVIEW/$invoiceId"
+    const val INVOICE_PREVIEW_PATTERN = "$INVOICE_PREVIEW/{$INVOICE_ARG}"
 
     const val EDIT_BUSINESS_PROFILE = "edit_business_profile"
 }

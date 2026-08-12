@@ -3,18 +3,32 @@ package com.sheshabiz.quickquote.domain
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.sheshabiz.quickquote.data.db.entity.Invoice
 import com.sheshabiz.quickquote.data.db.entity.Quote
 
 object WhatsAppShare {
     private val WHATSAPP_PACKAGES = listOf("com.whatsapp", "com.whatsapp.w4b")
 
-    fun buildMessage(businessName: String, quote: Quote): String {
-        val firstName = quote.customerName.trim().substringBefore(" ").ifBlank { quote.customerName }
+    fun buildMessage(businessName: String, quote: Quote): String =
+        buildMessage(businessName, quote.customerName, "quotation", "Quote", quote.quoteNumber, quote.total)
+
+    fun buildMessage(businessName: String, invoice: Invoice): String =
+        buildMessage(businessName, invoice.customerName, "invoice", "Invoice", invoice.invoiceNumber, invoice.total)
+
+    private fun buildMessage(
+        businessName: String,
+        customerName: String,
+        documentNoun: String,
+        documentLabel: String,
+        number: String,
+        total: Double
+    ): String {
+        val firstName = customerName.trim().substringBefore(" ").ifBlank { customerName }
         return buildString {
             append("Hi $firstName,\n\n")
-            append("Please find your quotation from $businessName.\n\n")
-            append("Quote: ${quote.quoteNumber}\n")
-            append("Total: ${CurrencyFormat.format(quote.total)}\n\n")
+            append("Please find your $documentNoun from $businessName.\n\n")
+            append("$documentLabel: $number\n")
+            append("Total: ${CurrencyFormat.format(total)}\n\n")
             append("Thank you.")
         }
     }

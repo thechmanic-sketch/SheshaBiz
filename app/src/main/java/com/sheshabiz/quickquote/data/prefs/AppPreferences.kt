@@ -59,6 +59,21 @@ class AppPreferences(context: Context) {
         return "%s-%04d".format(quoteNumberPrefix, current)
     }
 
+    var invoiceNumberPrefix: String
+        get() = prefs.getString(KEY_INVOICE_PREFIX, DEFAULT_INVOICE_PREFIX) ?: DEFAULT_INVOICE_PREFIX
+        set(value) = prefs.edit().putString(KEY_INVOICE_PREFIX, value.ifBlank { DEFAULT_INVOICE_PREFIX }).apply()
+
+    var nextInvoiceNumber: Int
+        get() = prefs.getInt(KEY_NEXT_INVOICE_NUMBER, 1)
+        set(value) = prefs.edit().putInt(KEY_NEXT_INVOICE_NUMBER, value).apply()
+
+    /** Reserves and returns the next invoice number, formatted with the configured prefix. */
+    fun reserveNextInvoiceNumber(): String {
+        val current = nextInvoiceNumber
+        nextInvoiceNumber = current + 1
+        return "%s-%04d".format(invoiceNumberPrefix, current)
+    }
+
     var defaultVatEnabled: Boolean
         get() = prefs.getBoolean(KEY_VAT_DEFAULT_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_VAT_DEFAULT_ENABLED, value).apply()
@@ -81,10 +96,13 @@ class AppPreferences(context: Context) {
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_QUOTE_PREFIX = "quote_prefix"
         private const val KEY_NEXT_NUMBER = "next_quote_number"
+        private const val KEY_INVOICE_PREFIX = "invoice_prefix"
+        private const val KEY_NEXT_INVOICE_NUMBER = "next_invoice_number"
         private const val KEY_VAT_DEFAULT_ENABLED = "vat_default_enabled"
         private const val KEY_VAT_RATE = "vat_rate"
         private const val KEY_PAYMENT_TERMS = "payment_terms"
         const val DEFAULT_PREFIX = "Q"
+        const val DEFAULT_INVOICE_PREFIX = "INV"
         const val DEFAULT_VAT_RATE = 15.0
         const val DEFAULT_PAYMENT_TERMS = "Payment due within 7 days."
     }

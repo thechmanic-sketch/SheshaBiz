@@ -134,6 +134,12 @@ fun SettingsScreen(
                     onValueChange = viewModel::onPrefixChange,
                     label = stringResource(R.string.settings_prefix)
                 )
+                Spacer(Modifier.height(14.dp))
+                QQTextField(
+                    value = state.invoicePrefix,
+                    onValueChange = viewModel::onInvoicePrefixChange,
+                    label = stringResource(R.string.settings_invoice_prefix)
+                )
             }
         }
         Spacer(Modifier.height(20.dp))

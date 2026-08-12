@@ -3,9 +3,13 @@ package com.sheshabiz.quickquote.ui.quote.preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
+import com.sheshabiz.quickquote.data.db.entity.Invoice
+import com.sheshabiz.quickquote.data.db.entity.InvoiceItem
+import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
+import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.domain.PdfGenerator
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
@@ -29,6 +33,7 @@ class QuotePreviewViewModel(
     private val quoteId: Long,
     private val quoteRepository: QuoteRepository,
     private val businessRepository: BusinessRepository,
+    private val invoiceRepository: InvoiceRepository,
     private val preferences: AppPreferences,
     private val pdfGenerator: PdfGenerator
 ) : ViewModel() {
@@ -46,12 +51,15 @@ class QuotePreviewViewModel(
     private val _duplicatedId = MutableStateFlow<Long?>(null)
     val duplicatedId: StateFlow<Long?> = _duplicatedId
 
+    private val _convertedInvoiceId = MutableStateFlow<Long?>(null)
+    val convertedInvoiceId: StateFlow<Long?> = _convertedInvoiceId
+
     suspend fun generatePdfFile(): File? {
         val state = uiState.value
         val data = state.data ?: return null
         val profile = state.businessProfile ?: return null
         return withContext(Dispatchers.IO) {
-            runCatching { pdfGenerator.generate(profile, data) }.getOrNull()
+            runCatching { pdfGenerator.generateForQuote(profile, data) }.getOrNull()
         }
     }
 
@@ -86,6 +94,51 @@ class QuotePreviewViewModel(
             val newItems = current.items.map { it.copy(id = 0, quoteId = 0) }
             val newId = quoteRepository.createQuote(newQuote, newItems)
             _duplicatedId.value = newId
+        }
+    }
+
+    fun convertToInvoice() {
+        viewModelScope.launch {
+            val current = uiState.value.data ?: return@launch
+            val quote = current.quote
+            val now = System.currentTimeMillis()
+            val invoice = Invoice(
+                invoiceNumber = preferences.reserveNextInvoiceNumber(),
+                sourceQuoteId = quote.id,
+                customerId = quote.customerId,
+                customerName = quote.customerName,
+                customerPhone = quote.customerPhone,
+                customerEmail = quote.customerEmail,
+                customerAddress = quote.customerAddress,
+                invoiceDate = now,
+                dueDate = now + 7L * 24 * 60 * 60 * 1000,
+                vatEnabled = quote.vatEnabled,
+                vatRate = quote.vatRate,
+                discountType = quote.discountType,
+                discountValue = quote.discountValue,
+                subtotal = quote.subtotal,
+                discountAmount = quote.discountAmount,
+                vatAmount = quote.vatAmount,
+                total = quote.total,
+                notes = quote.notes,
+                paymentTerms = quote.paymentTerms,
+                status = InvoiceStatus.UNPAID,
+                paidAt = null,
+                createdAt = now,
+                updatedAt = now
+            )
+            val items = current.items.map {
+                InvoiceItem(
+                    invoiceId = 0,
+                    description = it.description,
+                    quantity = it.quantity,
+                    unitPrice = it.unitPrice,
+                    lineTotal = it.lineTotal,
+                    sortOrder = it.sortOrder
+                )
+            }
+            val newId = invoiceRepository.createInvoice(invoice, items)
+            _convertedInvoiceId.value = newId
         }
     }
 }

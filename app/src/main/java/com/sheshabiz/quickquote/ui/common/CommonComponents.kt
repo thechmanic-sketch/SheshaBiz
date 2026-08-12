@@ -186,6 +186,23 @@ fun StatusChip(status: QuoteStatus, modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun InvoiceStatusChip(status: com.sheshabiz.quickquote.data.db.entity.InvoiceStatus, isOverdue: Boolean, modifier: Modifier = Modifier) {
+    val (bg, fg, label) = when {
+        status == com.sheshabiz.quickquote.data.db.entity.InvoiceStatus.PAID -> Triple(Color(0xFFE1F3EF), Color(0xFF2E9E8B), "Paid")
+        status == com.sheshabiz.quickquote.data.db.entity.InvoiceStatus.CANCELLED -> Triple(Color(0xFFEDEDEA), Color(0xFF6B6B6B), "Cancelled")
+        isOverdue -> Triple(Color(0xFFF9E7E5), Color(0xFFC4453B), "Overdue")
+        else -> Triple(Color(0xFFE3EEF9), Color(0xFF3B82C4), "Unpaid")
+    }
+    Box(
+        modifier = modifier
+            .background(bg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(text = label, color = fg, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text.uppercase(),
