@@ -37,12 +37,13 @@ import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 fun CustomersScreen(
     viewModel: CustomersViewModel,
     onAddCustomer: () -> Unit,
-    onOpenCustomer: (Long) -> Unit
+    onOpenCustomer: (Long) -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        ScreenTitleHeader(title = stringResource(R.string.customers_title))
+        ScreenTitleHeader(title = stringResource(R.string.customers_title), onBack = onBack)
 
         Scaffold(
             modifier = Modifier.weight(1f),

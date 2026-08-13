@@ -147,6 +147,49 @@ fun BusinessSetupScreen(
             onValueChange = viewModel::onVatNumberChange,
             label = stringResource(R.string.vat_number_optional)
         )
+        Spacer(Modifier.height(14.dp))
+        QQTextField(
+            value = state.registrationNumber,
+            onValueChange = viewModel::onRegistrationNumberChange,
+            label = stringResource(R.string.registration_number_optional)
+        )
+        Spacer(Modifier.height(28.dp))
+
+        com.sheshabiz.quickquote.ui.common.SectionLabel(stringResource(R.string.banking_details_optional))
+        QQTextField(
+            value = state.bankName,
+            onValueChange = viewModel::onBankNameChange,
+            label = stringResource(R.string.bank_name)
+        )
+        Spacer(Modifier.height(14.dp))
+        QQTextField(
+            value = state.accountHolder,
+            onValueChange = viewModel::onAccountHolderChange,
+            label = stringResource(R.string.account_holder)
+        )
+        Spacer(Modifier.height(14.dp))
+        QQTextField(
+            value = state.accountNumber,
+            onValueChange = viewModel::onAccountNumberChange,
+            label = stringResource(R.string.account_number),
+            keyboardType = KeyboardType.Number
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+            QQTextField(
+                value = state.branchCode,
+                onValueChange = viewModel::onBranchCodeChange,
+                label = stringResource(R.string.branch_code),
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f)
+            )
+            QQTextField(
+                value = state.accountType,
+                onValueChange = viewModel::onAccountTypeChange,
+                label = stringResource(R.string.account_type),
+                modifier = Modifier.weight(1f)
+            )
+        }
         Spacer(Modifier.height(28.dp))
 
         QQPrimaryButton(

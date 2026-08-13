@@ -143,6 +143,14 @@ fun QuotePreviewScreen(
         }
     }
 
+    fun printPdf() {
+        scope.launch {
+            val file = viewModel.generatePdfFile() ?: return@launch
+            val quote = state.data?.quote ?: return@launch
+            com.sheshabiz.quickquote.domain.PrintHelper.printPdf(context, file, quote.quoteNumber)
+        }
+    }
+
     if (state.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -180,6 +188,8 @@ fun QuotePreviewScreen(
                 QQOutlinedButton(text = stringResource(R.string.share_pdf), onClick = ::sharePdf, modifier = Modifier.weight(1f))
                 QQOutlinedButton(text = stringResource(R.string.download_pdf), onClick = ::downloadPdf, modifier = Modifier.weight(1f))
             }
+            Spacer(Modifier.height(10.dp))
+            QQOutlinedButton(text = "Print", onClick = ::printPdf)
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 QQOutlinedButton(text = stringResource(R.string.edit), onClick = { onEdit(quote.id) }, modifier = Modifier.weight(1f))
@@ -280,6 +290,9 @@ private fun QuoteDocumentPreview(profile: BusinessProfile, quote: Quote, items: 
                 profile.vatNumber?.takeIf { it.isNotBlank() }?.let {
                     Text("VAT: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                profile.registrationNumber?.takeIf { it.isNotBlank() }?.let {
+                    Text("Reg No: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -307,16 +320,18 @@ private fun QuoteDocumentPreview(profile: BusinessProfile, quote: Quote, items: 
         SectionLabel(stringResource(R.string.items_label))
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Description", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Qty", modifier = Modifier.weight(0.6f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Total", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Qty", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Price", modifier = Modifier.weight(0.8f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Total", modifier = Modifier.weight(0.9f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(6.dp))
         Divider(color = MaterialTheme.colorScheme.outline)
         items.sortedBy { it.sortOrder }.forEach { item ->
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(item.description, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodyMedium)
-                Text(formatQty(item.quantity), modifier = Modifier.weight(0.6f), style = MaterialTheme.typography.bodyMedium)
-                Text(CurrencyFormat.format(item.lineTotal), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                Text(formatQty(item.quantity), modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.bodyMedium)
+                Text(CurrencyFormat.format(item.unitPrice), modifier = Modifier.weight(0.8f), style = MaterialTheme.typography.bodyMedium)
+                Text(CurrencyFormat.format(item.lineTotal), modifier = Modifier.weight(0.9f), style = MaterialTheme.typography.bodyMedium)
             }
             Divider(color = MaterialTheme.colorScheme.outline)
         }
@@ -351,6 +366,21 @@ private fun QuoteDocumentPreview(profile: BusinessProfile, quote: Quote, items: 
             Spacer(Modifier.height(14.dp))
             SectionLabel(stringResource(R.string.notes_optional))
             Text(it, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        val bankingLines = listOfNotNull(
+            profile.bankName?.takeIf { it.isNotBlank() }?.let { "Bank: $it" },
+            profile.accountHolder?.takeIf { it.isNotBlank() }?.let { "Account holder: $it" },
+            profile.accountNumber?.takeIf { it.isNotBlank() }?.let { "Account number: $it" },
+            profile.branchCode?.takeIf { it.isNotBlank() }?.let { "Branch code: $it" },
+            profile.accountType?.takeIf { it.isNotBlank() }?.let { "Account type: $it" }
+        )
+        if (bankingLines.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            SectionLabel(stringResource(R.string.banking_details_optional))
+            bankingLines.forEach { line ->
+                Text(line, style = MaterialTheme.typography.bodyMedium)
+            }
         }
 
         Spacer(Modifier.height(24.dp))

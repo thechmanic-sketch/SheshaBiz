@@ -21,6 +21,7 @@ import com.sheshabiz.quickquote.domain.model.InvoiceWithItems
 import com.sheshabiz.quickquote.domain.model.PrintableDocument
 import com.sheshabiz.quickquote.domain.model.PrintableItem
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
+import com.sheshabiz.quickquote.domain.model.SaleWithItems
 import java.io.File
 import java.io.FileOutputStream
 
@@ -103,6 +104,37 @@ class PdfGenerator(private val context: Context) {
         return render(profile, document)
     }
 
+    fun generateForSale(profile: BusinessProfile, data: SaleWithItems): File {
+        val sale = data.sale
+        val document = PrintableDocument(
+            kind = DocumentKind.RECEIPT,
+            number = sale.saleNumber,
+            primaryDate = sale.saleDate,
+            secondaryDateLabel = "PAYMENT",
+            secondaryDate = sale.saleDate,
+            secondaryValueText = sale.paymentMethod.name,
+            statusLabel = null,
+            customerName = sale.customerName,
+            customerPhone = "",
+            customerEmail = null,
+            customerAddress = null,
+            items = data.items.sortedBy { it.sortOrder }.map {
+                PrintableItem(it.description, it.quantity, it.unitPrice, it.lineTotal, it.sortOrder)
+            },
+            vatEnabled = sale.vatEnabled,
+            vatRate = sale.vatRate,
+            discountType = sale.discountType,
+            discountValue = sale.discountValue,
+            subtotal = sale.subtotal,
+            discountAmount = sale.discountAmount,
+            vatAmount = sale.vatAmount,
+            total = sale.total,
+            notes = sale.notes,
+            paymentTerms = null
+        )
+        return render(profile, document)
+    }
+
     fun fileFor(kind: DocumentKind, number: String): File = outputFile(kind, number)
 
     private fun render(profile: BusinessProfile, doc: PrintableDocument): File {
@@ -148,7 +180,8 @@ class PdfGenerator(private val context: Context) {
             profile.phone.takeIf { it.isNotBlank() },
             profile.email.takeIf { it.isNotBlank() },
             profile.address.takeIf { it.isNotBlank() },
-            profile.vatNumber?.takeIf { it.isNotBlank() }?.let { "VAT: $it" }
+            profile.vatNumber?.takeIf { it.isNotBlank() }?.let { "VAT: $it" },
+            profile.registrationNumber?.takeIf { it.isNotBlank() }?.let { "Reg No: $it" }
         )
         for (line in contactLines) {
             canvas.drawText(line, headerTextX, contactY, smallMuted)
@@ -175,7 +208,7 @@ class PdfGenerator(private val context: Context) {
         canvas.drawText("DATE", col2, y + 34f, metaLabel)
         canvas.drawText(CurrencyFormat.formatDate(doc.primaryDate), col2, y + 48f, metaValue)
         canvas.drawText(doc.secondaryDateLabel, col3, y + 34f, metaLabel)
-        canvas.drawText(CurrencyFormat.formatDate(doc.secondaryDate), col3, y + 48f, metaValue)
+        canvas.drawText(doc.secondaryValueText ?: CurrencyFormat.formatDate(doc.secondaryDate), col3, y + 48f, metaValue)
         y += 62f
 
         drawDivider(canvas, y)
@@ -183,22 +216,24 @@ class PdfGenerator(private val context: Context) {
 
         // ---- Customer ----
         val sectionLabel = textPaint(10f, true, mutedColor)
-        canvas.drawText("CUSTOMER", margin, y, sectionLabel)
-        y += 16f
-        val custName = textPaint(13f, true, textColor)
-        canvas.drawText(doc.customerName, margin, y, custName)
-        y += 16f
-        val custDetail = textPaint(11f, false, textColor)
-        val customerLines = listOfNotNull(
-            doc.customerPhone.takeIf { it.isNotBlank() },
-            doc.customerEmail?.takeIf { it.isNotBlank() },
-            doc.customerAddress?.takeIf { it.isNotBlank() }
-        )
-        for (line in customerLines) {
-            canvas.drawText(line, margin, y, custDetail)
+        if (doc.customerName.isNotBlank()) {
+            canvas.drawText("CUSTOMER", margin, y, sectionLabel)
+            y += 16f
+            val custName = textPaint(13f, true, textColor)
+            canvas.drawText(doc.customerName, margin, y, custName)
+            y += 16f
+            val custDetail = textPaint(11f, false, textColor)
+            val customerLines = listOfNotNull(
+                doc.customerPhone.takeIf { it.isNotBlank() },
+                doc.customerEmail?.takeIf { it.isNotBlank() },
+                doc.customerAddress?.takeIf { it.isNotBlank() }
+            )
+            for (line in customerLines) {
+                canvas.drawText(line, margin, y, custDetail)
+                y += 14f
+            }
             y += 14f
         }
-        y += 14f
 
         // ---- Items table ----
         val colDescX = margin
@@ -320,6 +355,26 @@ class PdfGenerator(private val context: Context) {
             layout.draw(canvas)
             canvas.restore()
             y += layout.height + 16f
+        }
+
+        // ---- Banking details ----
+        val bankingLines = listOfNotNull(
+            profile.bankName?.takeIf { it.isNotBlank() }?.let { "Bank: $it" },
+            profile.accountHolder?.takeIf { it.isNotBlank() }?.let { "Account holder: $it" },
+            profile.accountNumber?.takeIf { it.isNotBlank() }?.let { "Account number: $it" },
+            profile.branchCode?.takeIf { it.isNotBlank() }?.let { "Branch code: $it" },
+            profile.accountType?.takeIf { it.isNotBlank() }?.let { "Account type: $it" }
+        )
+        if (bankingLines.isNotEmpty()) {
+            ensureSpace(30f + bankingLines.size * 14f)
+            canvas.drawText("BANKING DETAILS", margin, y, sectionLabel)
+            y += 16f
+            val bankingPaint = textPaint(10.5f, false, textColor)
+            for (line in bankingLines) {
+                canvas.drawText(line, margin, y, bankingPaint)
+                y += 14f
+            }
+            y += 12f
         }
 
         // ---- Footer ----

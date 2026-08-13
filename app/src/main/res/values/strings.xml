@@ -21,6 +21,13 @@
     <string name="email">Email</string>
     <string name="business_address">Business address</string>
     <string name="vat_number_optional">VAT number (optional)</string>
+    <string name="registration_number_optional">Company registration number (optional)</string>
+    <string name="banking_details_optional">Banking details (optional)</string>
+    <string name="bank_name">Bank name</string>
+    <string name="account_holder">Account holder</string>
+    <string name="account_number">Account number</string>
+    <string name="branch_code">Branch code</string>
+    <string name="account_type">Account type</string>
     <string name="logo_optional">Logo (optional)</string>
     <string name="continue_label">Continue</string>
     <string name="add_logo">Add logo</string>
@@ -45,6 +52,8 @@
     <string name="nav_customers">Customers</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_invoices">Invoices</string>
+    <string name="nav_pos">Till</string>
+    <string name="nav_more">More</string>
 
     <!-- Statuses -->
     <string name="status_draft">Draft</string>

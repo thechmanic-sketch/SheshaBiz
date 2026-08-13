@@ -3,10 +3,10 @@ package com.sheshabiz.quickquote.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.RequestQuote
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -46,7 +46,18 @@ import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewScreen
 import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewViewModel
 import com.sheshabiz.quickquote.ui.invoices.InvoicesListScreen
 import com.sheshabiz.quickquote.ui.invoices.InvoicesListViewModel
+import com.sheshabiz.quickquote.ui.more.MoreScreen
 import com.sheshabiz.quickquote.ui.onboarding.OnboardingScreen
+import com.sheshabiz.quickquote.ui.pos.ReceiptPreviewScreen
+import com.sheshabiz.quickquote.ui.pos.ReceiptPreviewViewModel
+import com.sheshabiz.quickquote.ui.pos.SalesHistoryScreen
+import com.sheshabiz.quickquote.ui.pos.SalesHistoryViewModel
+import com.sheshabiz.quickquote.ui.pos.TillScreen
+import com.sheshabiz.quickquote.ui.pos.TillViewModel
+import com.sheshabiz.quickquote.ui.products.ProductEditScreen
+import com.sheshabiz.quickquote.ui.products.ProductEditViewModel
+import com.sheshabiz.quickquote.ui.products.ProductsScreen
+import com.sheshabiz.quickquote.ui.products.ProductsViewModel
 import com.sheshabiz.quickquote.ui.quote.create.CreateQuoteScreen
 import com.sheshabiz.quickquote.ui.quote.create.CreateQuoteViewModel
 import com.sheshabiz.quickquote.ui.quote.preview.QuotePreviewScreen
@@ -64,8 +75,8 @@ private val bottomTabs = listOf(
     BottomTab(Routes.DASHBOARD, R.string.nav_dashboard, Icons.Filled.Dashboard),
     BottomTab(Routes.QUOTES, R.string.nav_quotes, Icons.Filled.ReceiptLong),
     BottomTab(Routes.INVOICES, R.string.nav_invoices, Icons.Filled.RequestQuote),
-    BottomTab(Routes.CUSTOMERS, R.string.nav_customers, Icons.Filled.People),
-    BottomTab(Routes.SETTINGS, R.string.nav_settings, Icons.Filled.Settings)
+    BottomTab(Routes.POS, R.string.nav_pos, Icons.Filled.PointOfSale),
+    BottomTab(Routes.MORE, R.string.nav_more, Icons.Filled.MoreHoriz)
 )
 
 @Composable
@@ -225,19 +236,114 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 CustomersScreen(
                     viewModel = vm,
                     onAddCustomer = { navController.navigate(Routes.customerEdit()) },
-                    onOpenCustomer = { id -> navController.navigate(Routes.customerEdit(id)) }
+                    onOpenCustomer = { id -> navController.navigate(Routes.customerEdit(id)) },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Routes.SETTINGS) {
                 val vm = viewModel<SettingsViewModel>(
                     factory = viewModelFactory {
-                        SettingsViewModel(container.businessRepository, container.preferences, container.backupService)
+                        SettingsViewModel(
+                            container.businessRepository,
+                            container.preferences,
+                            container.backupService,
+                            container.reminderScheduler
+                        )
                     }
                 )
                 SettingsScreen(
                     viewModel = vm,
-                    onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) }
+                    onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.MORE) {
+                MoreScreen(
+                    onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
+                    onOpenProducts = { navController.navigate(Routes.PRODUCTS) },
+                    onOpenSalesHistory = { navController.navigate(Routes.SALES_HISTORY) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+                )
+            }
+
+            composable(Routes.PRODUCTS) {
+                val vm = viewModel<ProductsViewModel>(
+                    factory = viewModelFactory { ProductsViewModel(container.productRepository) }
+                )
+                ProductsScreen(
+                    viewModel = vm,
+                    onAddProduct = { navController.navigate(Routes.productEdit()) },
+                    onOpenProduct = { id -> navController.navigate(Routes.productEdit(id)) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.PRODUCT_EDIT_PATTERN,
+                arguments = listOf(navArgument(Routes.PRODUCT_ARG) { type = NavType.LongType; defaultValue = -1L })
+            ) { entry ->
+                val productIdArg = entry.arguments?.getLong(Routes.PRODUCT_ARG) ?: -1L
+                val productId = productIdArg.takeIf { it > 0 }
+                val vm = viewModel<ProductEditViewModel>(
+                    key = "product_edit_$productIdArg",
+                    factory = viewModelFactory { ProductEditViewModel(container.productRepository, productId) }
+                )
+                ProductEditScreen(
+                    viewModel = vm,
+                    isEditing = productId != null,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() },
+                    onDeleted = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.POS) {
+                val vm = viewModel<TillViewModel>(
+                    factory = viewModelFactory {
+                        TillViewModel(container.productRepository, container.saleRepository, container.preferences)
+                    }
+                )
+                TillScreen(
+                    viewModel = vm,
+                    customerRepository = container.customerRepository,
+                    onSaleCompleted = { saleId ->
+                        navController.navigate(Routes.salePreview(saleId))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.SALE_PREVIEW_PATTERN,
+                arguments = listOf(navArgument(Routes.SALE_ARG) { type = NavType.LongType })
+            ) { entry ->
+                val saleId = entry.arguments?.getLong(Routes.SALE_ARG) ?: 0L
+                val vm = viewModel<ReceiptPreviewViewModel>(
+                    key = "sale_preview_$saleId",
+                    factory = viewModelFactory {
+                        ReceiptPreviewViewModel(saleId, container.saleRepository, container.businessRepository, container.pdfGenerator)
+                    }
+                )
+                ReceiptPreviewScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onNewSale = {
+                        navController.navigate(Routes.POS) {
+                            popUpTo(Routes.POS) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Routes.SALES_HISTORY) {
+                val vm = viewModel<SalesHistoryViewModel>(
+                    factory = viewModelFactory { SalesHistoryViewModel(container.saleRepository) }
+                )
+                SalesHistoryScreen(
+                    viewModel = vm,
+                    onOpenSale = { id -> navController.navigate(Routes.salePreview(id)) },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -256,6 +362,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 CreateQuoteScreen(
                     viewModel = vm,
                     customerRepository = container.customerRepository,
+                    productRepository = container.productRepository,
                     isEditing = quoteId != null,
                     onBack = { navController.popBackStack() },
                     onSaved = { savedId ->
@@ -333,6 +440,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 CreateInvoiceScreen(
                     viewModel = vm,
                     customerRepository = container.customerRepository,
+                    productRepository = container.productRepository,
                     isEditing = invoiceId != null,
                     onBack = { navController.popBackStack() },
                     onSaved = { savedId ->

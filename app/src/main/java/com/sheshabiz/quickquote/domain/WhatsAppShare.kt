@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import com.sheshabiz.quickquote.data.db.entity.Invoice
 import com.sheshabiz.quickquote.data.db.entity.Quote
+import com.sheshabiz.quickquote.data.db.entity.Sale
 
 object WhatsAppShare {
     private val WHATSAPP_PACKAGES = listOf("com.whatsapp", "com.whatsapp.w4b")
@@ -14,6 +15,9 @@ object WhatsAppShare {
 
     fun buildMessage(businessName: String, invoice: Invoice): String =
         buildMessage(businessName, invoice.customerName, "invoice", "Invoice", invoice.invoiceNumber, invoice.total)
+
+    fun buildMessage(businessName: String, sale: Sale): String =
+        buildMessage(businessName, sale.customerName, "receipt", "Receipt", sale.saleNumber, sale.total)
 
     private fun buildMessage(
         businessName: String,

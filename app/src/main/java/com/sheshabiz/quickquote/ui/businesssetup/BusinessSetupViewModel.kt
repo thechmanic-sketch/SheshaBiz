@@ -20,7 +20,13 @@ data class BusinessSetupUiState(
     val email: String = "",
     val address: String = "",
     val vatNumber: String = "",
+    val registrationNumber: String = "",
     val logoUri: String? = null,
+    val bankName: String = "",
+    val accountHolder: String = "",
+    val accountNumber: String = "",
+    val branchCode: String = "",
+    val accountType: String = "",
     val businessNameError: String? = null,
     val ownerNameError: String? = null,
     val phoneError: String? = null,
@@ -50,7 +56,13 @@ class BusinessSetupViewModel(
                         email = profile.email,
                         address = profile.address,
                         vatNumber = profile.vatNumber.orEmpty(),
-                        logoUri = profile.logoUri
+                        registrationNumber = profile.registrationNumber.orEmpty(),
+                        logoUri = profile.logoUri,
+                        bankName = profile.bankName.orEmpty(),
+                        accountHolder = profile.accountHolder.orEmpty(),
+                        accountNumber = profile.accountNumber.orEmpty(),
+                        branchCode = profile.branchCode.orEmpty(),
+                        accountType = profile.accountType.orEmpty()
                     )
                 }
             }
@@ -64,6 +76,12 @@ class BusinessSetupViewModel(
     fun onEmailChange(v: String) = _uiState.update { it.copy(email = v, emailError = null) }
     fun onAddressChange(v: String) = _uiState.update { it.copy(address = v) }
     fun onVatNumberChange(v: String) = _uiState.update { it.copy(vatNumber = v) }
+    fun onRegistrationNumberChange(v: String) = _uiState.update { it.copy(registrationNumber = v) }
+    fun onBankNameChange(v: String) = _uiState.update { it.copy(bankName = v) }
+    fun onAccountHolderChange(v: String) = _uiState.update { it.copy(accountHolder = v) }
+    fun onAccountNumberChange(v: String) = _uiState.update { it.copy(accountNumber = v) }
+    fun onBranchCodeChange(v: String) = _uiState.update { it.copy(branchCode = v) }
+    fun onAccountTypeChange(v: String) = _uiState.update { it.copy(accountType = v) }
 
     fun onLogoPicked(uri: Uri) {
         viewModelScope.launch {
@@ -110,7 +128,13 @@ class BusinessSetupViewModel(
                     email = s.email.trim(),
                     address = s.address.trim(),
                     vatNumber = s.vatNumber.trim().ifBlank { null },
-                    logoUri = s.logoUri
+                    registrationNumber = s.registrationNumber.trim().ifBlank { null },
+                    logoUri = s.logoUri,
+                    bankName = s.bankName.trim().ifBlank { null },
+                    accountHolder = s.accountHolder.trim().ifBlank { null },
+                    accountNumber = s.accountNumber.trim().ifBlank { null },
+                    branchCode = s.branchCode.trim().ifBlank { null },
+                    accountType = s.accountType.trim().ifBlank { null }
                 )
             )
             preferences.setBusinessSetupComplete(true)

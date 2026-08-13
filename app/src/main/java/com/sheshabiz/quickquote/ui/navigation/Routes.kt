@@ -10,6 +10,10 @@ object Routes {
     const val INVOICES = "invoices"
     const val CUSTOMERS = "customers"
     const val SETTINGS = "settings"
+    const val POS = "pos"
+    const val PRODUCTS = "products"
+    const val MORE = "more"
+    const val SALES_HISTORY = "sales_history"
 
     const val CREATE_QUOTE = "quote_edit"
     const val QUOTE_ARG = "quoteId"
@@ -38,4 +42,15 @@ object Routes {
     const val INVOICE_PREVIEW_PATTERN = "$INVOICE_PREVIEW/{$INVOICE_ARG}"
 
     const val EDIT_BUSINESS_PROFILE = "edit_business_profile"
+
+    const val PRODUCT_EDIT = "product_edit"
+    const val PRODUCT_ARG = "productId"
+    fun productEdit(productId: Long? = null) =
+        if (productId == null) "$PRODUCT_EDIT?$PRODUCT_ARG=-1" else "$PRODUCT_EDIT?$PRODUCT_ARG=$productId"
+    const val PRODUCT_EDIT_PATTERN = "$PRODUCT_EDIT?$PRODUCT_ARG={$PRODUCT_ARG}"
+
+    const val SALE_PREVIEW = "sale_preview"
+    const val SALE_ARG = "saleId"
+    fun salePreview(saleId: Long) = "$SALE_PREVIEW/$saleId"
+    const val SALE_PREVIEW_PATTERN = "$SALE_PREVIEW/{$SALE_ARG}"
 }

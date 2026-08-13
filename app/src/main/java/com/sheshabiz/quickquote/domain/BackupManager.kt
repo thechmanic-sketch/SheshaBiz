@@ -6,9 +6,13 @@ import com.sheshabiz.quickquote.data.db.entity.DiscountType
 import com.sheshabiz.quickquote.data.db.entity.Invoice
 import com.sheshabiz.quickquote.data.db.entity.InvoiceItem
 import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
+import com.sheshabiz.quickquote.data.db.entity.PaymentMethod
+import com.sheshabiz.quickquote.data.db.entity.Product
 import com.sheshabiz.quickquote.data.db.entity.Quote
 import com.sheshabiz.quickquote.data.db.entity.QuoteItem
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
+import com.sheshabiz.quickquote.data.db.entity.Sale
+import com.sheshabiz.quickquote.data.db.entity.SaleItem
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,18 +22,23 @@ data class BackupData(
     val quotes: List<Quote>,
     val itemsByQuoteIndex: List<List<QuoteItem>>,
     val invoices: List<Invoice>,
-    val itemsByInvoiceIndex: List<List<InvoiceItem>>
+    val itemsByInvoiceIndex: List<List<InvoiceItem>>,
+    val products: List<Product>,
+    val sales: List<Sale>,
+    val itemsBySaleIndex: List<List<SaleItem>>
 )
 
 /** Exports/imports the app's full local data set as a single human-readable JSON file. */
 object BackupManager {
-    private const val SCHEMA_VERSION = 2
+    private const val SCHEMA_VERSION = 3
 
     fun export(
         profile: BusinessProfile?,
         customers: List<Customer>,
         quotesWithItems: List<Pair<Quote, List<QuoteItem>>>,
-        invoicesWithItems: List<Pair<Invoice, List<InvoiceItem>>>
+        invoicesWithItems: List<Pair<Invoice, List<InvoiceItem>>>,
+        products: List<Product>,
+        salesWithItems: List<Pair<Sale, List<SaleItem>>>
     ): String {
         val root = JSONObject()
         root.put("schemaVersion", SCHEMA_VERSION)
@@ -44,7 +53,13 @@ object BackupManager {
                 put("email", it.email)
                 put("address", it.address)
                 put("vatNumber", it.vatNumber)
+                put("registrationNumber", it.registrationNumber)
                 put("logoUri", it.logoUri)
+                put("bankName", it.bankName)
+                put("accountHolder", it.accountHolder)
+                put("accountNumber", it.accountNumber)
+                put("branchCode", it.branchCode)
+                put("accountType", it.accountType)
             })
         }
 
@@ -138,6 +153,52 @@ object BackupManager {
         }
         root.put("invoices", invoicesArray)
 
+        val productsArray = JSONArray()
+        products.forEach { p ->
+            productsArray.put(JSONObject().apply {
+                put("name", p.name)
+                put("unitPrice", p.unitPrice)
+                put("sku", p.sku)
+                put("trackStock", p.trackStock)
+                put("stockQuantity", p.stockQuantity)
+                put("lowStockThreshold", p.lowStockThreshold ?: JSONObject.NULL)
+                put("createdAt", p.createdAt)
+                put("updatedAt", p.updatedAt)
+            })
+        }
+        root.put("products", productsArray)
+
+        val salesArray = JSONArray()
+        salesWithItems.forEach { (sale, items) ->
+            val saleJson = JSONObject().apply {
+                put("saleNumber", sale.saleNumber)
+                put("customerName", sale.customerName)
+                put("saleDate", sale.saleDate)
+                put("vatEnabled", sale.vatEnabled)
+                put("vatRate", sale.vatRate)
+                put("discountType", sale.discountType.name)
+                put("discountValue", sale.discountValue)
+                put("subtotal", sale.subtotal)
+                put("discountAmount", sale.discountAmount)
+                put("vatAmount", sale.vatAmount)
+                put("total", sale.total)
+                put("paymentMethod", sale.paymentMethod.name)
+                put("notes", sale.notes)
+                put("createdAt", sale.createdAt)
+                put("items", itemsToJson(items) { item ->
+                    JSONObject().apply {
+                        put("description", item.description)
+                        put("quantity", item.quantity)
+                        put("unitPrice", item.unitPrice)
+                        put("lineTotal", item.lineTotal)
+                        put("sortOrder", item.sortOrder)
+                    }
+                })
+            }
+            salesArray.put(saleJson)
+        }
+        root.put("sales", salesArray)
+
         return root.toString(2)
     }
 
@@ -159,7 +220,13 @@ object BackupManager {
                 email = it.optString("email"),
                 address = it.optString("address"),
                 vatNumber = it.optStringOrNull("vatNumber"),
-                logoUri = it.optStringOrNull("logoUri")
+                registrationNumber = it.optStringOrNull("registrationNumber"),
+                logoUri = it.optStringOrNull("logoUri"),
+                bankName = it.optStringOrNull("bankName"),
+                accountHolder = it.optStringOrNull("accountHolder"),
+                accountNumber = it.optStringOrNull("accountNumber"),
+                branchCode = it.optStringOrNull("branchCode"),
+                accountType = it.optStringOrNull("accountType")
             )
         }
 
@@ -249,7 +316,60 @@ object BackupManager {
             })
         }
 
-        return BackupData(profile, localIdToCustomer.values.toList(), quotes, itemsByQuoteIndex, invoices, itemsByInvoiceIndex)
+        val productsJson = root.optJSONArray("products") ?: JSONArray()
+        val products = mutableListOf<Product>()
+        for (i in 0 until productsJson.length()) {
+            val p = productsJson.getJSONObject(i)
+            products.add(
+                Product(
+                    name = p.optString("name"),
+                    unitPrice = p.optDouble("unitPrice", 0.0),
+                    sku = p.optStringOrNull("sku"),
+                    trackStock = p.optBoolean("trackStock", false),
+                    stockQuantity = p.optDouble("stockQuantity", 0.0),
+                    lowStockThreshold = if (p.isNull("lowStockThreshold")) null else p.optDouble("lowStockThreshold"),
+                    createdAt = p.optLong("createdAt", System.currentTimeMillis()),
+                    updatedAt = p.optLong("updatedAt", System.currentTimeMillis())
+                )
+            )
+        }
+
+        val salesJson = root.optJSONArray("sales") ?: JSONArray()
+        val sales = mutableListOf<Sale>()
+        val itemsBySaleIndex = mutableListOf<List<SaleItem>>()
+        for (i in 0 until salesJson.length()) {
+            val s = salesJson.getJSONObject(i)
+            sales.add(
+                Sale(
+                    saleNumber = s.optString("saleNumber"),
+                    customerId = null,
+                    customerName = s.optString("customerName"),
+                    saleDate = s.optLong("saleDate"),
+                    vatEnabled = s.optBoolean("vatEnabled", true),
+                    vatRate = s.optDouble("vatRate", 15.0),
+                    discountType = runCatching { DiscountType.valueOf(s.optString("discountType")) }.getOrDefault(DiscountType.PERCENT),
+                    discountValue = s.optDouble("discountValue", 0.0),
+                    subtotal = s.optDouble("subtotal", 0.0),
+                    discountAmount = s.optDouble("discountAmount", 0.0),
+                    vatAmount = s.optDouble("vatAmount", 0.0),
+                    total = s.optDouble("total", 0.0),
+                    paymentMethod = runCatching { PaymentMethod.valueOf(s.optString("paymentMethod")) }.getOrDefault(PaymentMethod.CASH),
+                    notes = s.optStringOrNull("notes"),
+                    createdAt = s.optLong("createdAt", System.currentTimeMillis())
+                )
+            )
+            itemsBySaleIndex.add(parseItems(s.optJSONArray("items")) { desc, qty, price, total, order ->
+                SaleItem(saleId = 0, productId = null, description = desc, quantity = qty, unitPrice = price, lineTotal = total, sortOrder = order)
+            })
+        }
+
+        return BackupData(
+            profile, localIdToCustomer.values.toList(),
+            quotes, itemsByQuoteIndex,
+            invoices, itemsByInvoiceIndex,
+            products,
+            sales, itemsBySaleIndex
+        )
     }
 
     private fun <T> parseItems(

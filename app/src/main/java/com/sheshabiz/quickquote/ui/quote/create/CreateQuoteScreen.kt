@@ -38,7 +38,9 @@ import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.data.db.entity.Customer
 import com.sheshabiz.quickquote.data.db.entity.DiscountType
+import com.sheshabiz.quickquote.data.db.entity.Product
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
+import com.sheshabiz.quickquote.data.repository.ProductRepository
 import com.sheshabiz.quickquote.domain.CurrencyFormat
 import com.sheshabiz.quickquote.ui.common.QQDateField
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
@@ -48,18 +50,22 @@ import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
 import com.sheshabiz.quickquote.ui.customers.CustomerPickerSheet
+import com.sheshabiz.quickquote.ui.products.ProductPickerSheet
 
 @Composable
 fun CreateQuoteScreen(
     viewModel: CreateQuoteViewModel,
     customerRepository: CustomerRepository,
+    productRepository: ProductRepository,
     isEditing: Boolean,
     onBack: () -> Unit,
     onSaved: (Long) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val customers by customerRepository.observeAll().collectAsState(initial = emptyList<Customer>())
+    val products by productRepository.observeAll().collectAsState(initial = emptyList<Product>())
     var showPicker by remember { mutableStateOf(false) }
+    var showProductPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.savedQuoteId) {
         state.savedQuoteId?.let { onSaved(it) }
@@ -156,7 +162,10 @@ fun CreateQuoteScreen(
                 if (index != state.items.lastIndex) Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            QQTextActionButton(text = stringResource(R.string.add_item), onClick = viewModel::addItem)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                QQTextActionButton(text = stringResource(R.string.add_item), onClick = viewModel::addItem)
+                QQTextActionButton(text = "From catalog", onClick = { showProductPicker = true })
+            }
             if (state.itemsError != null) {
                 Text(
                     text = state.itemsError!!,
@@ -245,6 +254,14 @@ fun CreateQuoteScreen(
             onDismiss = { showPicker = false },
             onSelect = { viewModel.onCustomerSelected(it); showPicker = false },
             onAddNew = { viewModel.onClearCustomer(); showPicker = false }
+        )
+    }
+
+    if (showProductPicker) {
+        ProductPickerSheet(
+            products = products,
+            onDismiss = { showProductPicker = false },
+            onSelect = { viewModel.addItemFromProduct(it); showProductPicker = false }
         )
     }
 }

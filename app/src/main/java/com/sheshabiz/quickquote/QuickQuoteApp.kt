@@ -11,6 +11,9 @@ class QuickQuoteApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        if (container.preferences.overdueRemindersEnabled.value) {
+            container.reminderScheduler.start()
+        }
     }
 }
 

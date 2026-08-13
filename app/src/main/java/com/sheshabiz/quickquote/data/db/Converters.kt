@@ -3,6 +3,7 @@ package com.sheshabiz.quickquote.data.db
 import androidx.room.TypeConverter
 import com.sheshabiz.quickquote.data.db.entity.DiscountType
 import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
+import com.sheshabiz.quickquote.data.db.entity.PaymentMethod
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 
 class Converters {
@@ -23,4 +24,10 @@ class Converters {
 
     @TypeConverter
     fun toInvoiceStatus(value: String): InvoiceStatus = InvoiceStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromPaymentMethod(value: PaymentMethod): String = value.name
+
+    @TypeConverter
+    fun toPaymentMethod(value: String): PaymentMethod = PaymentMethod.valueOf(value)
 }

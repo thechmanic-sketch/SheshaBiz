@@ -4,7 +4,8 @@ import com.sheshabiz.quickquote.data.db.entity.DiscountType
 
 enum class DocumentKind(val label: String, val fileNamePrefix: String) {
     QUOTATION("QUOTATION", "Quote"),
-    INVOICE("INVOICE", "Invoice")
+    INVOICE("INVOICE", "Invoice"),
+    RECEIPT("RECEIPT", "Receipt")
 }
 
 data class PrintableItem(
@@ -22,6 +23,7 @@ data class PrintableDocument(
     val primaryDate: Long,
     val secondaryDateLabel: String,
     val secondaryDate: Long,
+    val secondaryValueText: String? = null,
     val statusLabel: String?,
     val customerName: String,
     val customerPhone: String,

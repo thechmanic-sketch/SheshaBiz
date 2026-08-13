@@ -6,6 +6,7 @@ import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.domain.BackupService
+import com.sheshabiz.quickquote.domain.ReminderScheduler
 import com.sheshabiz.quickquote.ui.theme.AppThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,13 +22,15 @@ data class SettingsUiState(
     val vatEnabledDefault: Boolean = true,
     val vatRate: String = AppPreferences.DEFAULT_VAT_RATE.toString(),
     val paymentTerms: String = AppPreferences.DEFAULT_PAYMENT_TERMS,
-    val themeMode: AppThemeMode = AppThemeMode.SYSTEM
+    val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    val overdueRemindersEnabled: Boolean = false
 )
 
 class SettingsViewModel(
     private val businessRepository: BusinessRepository,
     private val preferences: AppPreferences,
-    private val backupService: BackupService
+    private val backupService: BackupService,
+    private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
 
     private val quotePrefix = MutableStateFlow(preferences.quoteNumberPrefix)
@@ -39,10 +42,11 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = combine(
         businessRepository.observeProfile(),
         preferences.themeMode,
+        preferences.overdueRemindersEnabled,
         combine(quotePrefix, invoicePrefix, vatEnabledDefault, vatRate, paymentTerms) { qp, ip, v, r, t ->
             listOf(qp, ip, v, r, t)
         }
-    ) { profile, theme, fields ->
+    ) { profile, theme, remindersEnabled, fields ->
         @Suppress("UNCHECKED_CAST")
         SettingsUiState(
             businessProfile = profile,
@@ -51,9 +55,15 @@ class SettingsViewModel(
             vatEnabledDefault = fields[2] as Boolean,
             vatRate = fields[3] as String,
             paymentTerms = fields[4] as String,
-            themeMode = theme
+            themeMode = theme,
+            overdueRemindersEnabled = remindersEnabled
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
+
+    fun onOverdueRemindersChange(enabled: Boolean) {
+        preferences.setOverdueRemindersEnabled(enabled)
+        if (enabled) reminderScheduler.start() else reminderScheduler.stop()
+    }
 
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()

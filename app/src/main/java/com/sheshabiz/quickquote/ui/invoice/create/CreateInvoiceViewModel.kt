@@ -7,6 +7,7 @@ import com.sheshabiz.quickquote.data.db.entity.DiscountType
 import com.sheshabiz.quickquote.data.db.entity.Invoice
 import com.sheshabiz.quickquote.data.db.entity.InvoiceItem
 import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
+import com.sheshabiz.quickquote.data.db.entity.Product
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
 import com.sheshabiz.quickquote.data.repository.InvoiceRepository
@@ -166,6 +167,20 @@ class CreateInvoiceViewModel(
     fun onDueDateChange(millis: Long) = _uiState.update { it.copy(dueDate = millis) }
 
     fun addItem() = _uiState.update { it.copy(items = it.items + InvoiceItemDraft(), itemsError = null) }
+
+    fun addItemFromProduct(product: Product) = _uiState.update { state ->
+        val newItem = InvoiceItemDraft(
+            description = product.name,
+            quantity = "1",
+            unitPrice = formatNumber(product.unitPrice)
+        )
+        val onlyEmptyItem = state.items.size == 1 &&
+            state.items[0].description.isBlank() && state.items[0].unitPrice.isBlank()
+        state.copy(
+            items = if (onlyEmptyItem) listOf(newItem) else state.items + newItem,
+            itemsError = null
+        )
+    }
 
     fun removeItem(key: Long) = _uiState.update { state ->
         val remaining = state.items.filterNot { it.key == key }

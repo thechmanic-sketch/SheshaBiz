@@ -1,5 +1,7 @@
 package com.sheshabiz.quickquote.ui.settings
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,7 +53,8 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onEditBusinessProfile: () -> Unit
+    onEditBusinessProfile: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -80,8 +83,26 @@ fun SettingsScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) pendingImportUri = uri }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.onOverdueRemindersChange(true)
+        } else {
+            Toast.makeText(context, "Notification permission is needed for reminders.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun onRemindersToggled(enabled: Boolean) {
+        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.onOverdueRemindersChange(enabled)
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        ScreenTitleHeader(title = stringResource(R.string.settings_title))
+        ScreenTitleHeader(title = stringResource(R.string.settings_title), onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -153,6 +174,28 @@ fun SettingsScreen(
                     singleLine = false,
                     minLines = 2
                 )
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+
+        SectionLabel("Notifications")
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Overdue invoice reminders", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Get a daily notification when invoices become overdue.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(checked = state.overdueRemindersEnabled, onCheckedChange = ::onRemindersToggled)
             }
         }
         Spacer(Modifier.height(20.dp))

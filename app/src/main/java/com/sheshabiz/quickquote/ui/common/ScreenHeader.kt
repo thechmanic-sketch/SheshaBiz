@@ -49,5 +49,6 @@ fun ScreenHeader(
                 .weight(1f, fill = false)
         )
         Row(verticalAlignment = Alignment.CenterVertically) { actions() }
+        HeaderLogo(modifier = Modifier.padding(start = 8.dp))
     }
 }
