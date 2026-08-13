@@ -40,6 +40,7 @@ import com.sheshabiz.quickquote.BuildConfig
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
+import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
 import com.sheshabiz.quickquote.ui.theme.AppThemeMode
 import kotlinx.coroutines.launch
@@ -79,18 +80,16 @@ fun SettingsScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) pendingImportUri = uri }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-    ) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            text = stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScreenTitleHeader(title = stringResource(R.string.settings_title))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+        ) {
         Spacer(Modifier.height(20.dp))
 
         SettingsCard {
@@ -211,6 +210,7 @@ fun SettingsScreen(
             }
         }
         Spacer(Modifier.height(32.dp))
+        }
     }
 
     if (pendingImportUri != null) {

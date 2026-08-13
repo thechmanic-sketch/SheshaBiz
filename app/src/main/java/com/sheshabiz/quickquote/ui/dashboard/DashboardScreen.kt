@@ -26,6 +26,7 @@ import com.sheshabiz.quickquote.ui.common.EmptyState
 import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QuoteRowItem
+import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 import java.util.Calendar
 
 @Composable
@@ -38,18 +39,18 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsState()
     val greeting = remember { greetingForCurrentTime() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-    ) {
-        Spacer(Modifier.height(20.dp))
-        Text(text = greeting, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            text = state.businessName.ifBlank { stringResource(R.string.app_name) },
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScreenTitleHeader(
+            title = state.businessName.ifBlank { stringResource(R.string.app_name) },
+            subtitle = greeting
         )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        ) {
         Spacer(Modifier.height(20.dp))
 
         StatsGrid(state = state)
@@ -87,6 +88,7 @@ fun DashboardScreen(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
         }
     }
 }

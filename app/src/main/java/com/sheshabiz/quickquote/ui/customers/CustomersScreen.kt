@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.ui.common.EmptyState
 import com.sheshabiz.quickquote.ui.common.QQTextField
+import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 
 @Composable
 fun CustomersScreen(
@@ -39,25 +41,24 @@ fun CustomersScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddCustomer, containerColor = MaterialTheme.colorScheme.primary) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_customer), tint = MaterialTheme.colorScheme.onPrimary)
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScreenTitleHeader(title = stringResource(R.string.customers_title))
+
+        Scaffold(
+            modifier = Modifier.weight(1f),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            floatingActionButton = {
+                FloatingActionButton(onClick = onAddCustomer, containerColor = MaterialTheme.colorScheme.primary) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_customer), tint = MaterialTheme.colorScheme.onPrimary)
+                }
             }
-        }
-    ) { padding ->
+        ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.customers_title),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
             Spacer(Modifier.height(16.dp))
 
             if (state.allCustomers.isNotEmpty()) {
@@ -90,6 +91,7 @@ fun CustomersScreen(
                     }
                 }
             }
+        }
         }
     }
 }

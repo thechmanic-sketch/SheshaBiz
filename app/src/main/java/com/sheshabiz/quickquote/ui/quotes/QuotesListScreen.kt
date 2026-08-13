@@ -38,6 +38,7 @@ import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.ui.common.EmptyState
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.QuoteRowItem
+import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 
 @Composable
 fun QuotesListScreen(
@@ -47,13 +48,15 @@ fun QuotesListScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            text = stringResource(R.string.nav_quotes),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScreenTitleHeader(title = stringResource(R.string.nav_quotes))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        ) {
         Spacer(Modifier.height(16.dp))
 
         QQTextField(
@@ -90,6 +93,7 @@ fun QuotesListScreen(
                     QuoteRowItem(quote = quote, onClick = { onOpenQuote(quote.id) })
                 }
             }
+        }
         }
     }
 }

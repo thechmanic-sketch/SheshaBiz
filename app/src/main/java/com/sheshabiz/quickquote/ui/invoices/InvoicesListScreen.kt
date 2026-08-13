@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,6 +41,7 @@ import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.ui.common.EmptyState
 import com.sheshabiz.quickquote.ui.common.InvoiceRowItem
 import com.sheshabiz.quickquote.ui.common.QQTextField
+import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 
 @Composable
 fun InvoicesListScreen(
@@ -49,25 +51,24 @@ fun InvoicesListScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNewInvoice, containerColor = MaterialTheme.colorScheme.primary) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_invoice), tint = MaterialTheme.colorScheme.onPrimary)
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScreenTitleHeader(title = stringResource(R.string.nav_invoices))
+
+        Scaffold(
+            modifier = Modifier.weight(1f),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            floatingActionButton = {
+                FloatingActionButton(onClick = onNewInvoice, containerColor = MaterialTheme.colorScheme.primary) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_invoice), tint = MaterialTheme.colorScheme.onPrimary)
+                }
             }
-        }
-    ) { padding ->
+        ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.nav_invoices),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
             Spacer(Modifier.height(16.dp))
 
             QQTextField(
@@ -105,6 +106,7 @@ fun InvoicesListScreen(
                     }
                 }
             }
+        }
         }
     }
 }
