@@ -30,7 +30,7 @@ import com.sheshabiz.quickquote.data.db.entity.SaleItem
         Product::class, Sale::class, SaleItem::class
     ],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
