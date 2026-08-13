@@ -14,13 +14,13 @@ data class BusinessProfile(
     val email: String,
     val address: String,
     val vatNumber: String?,
-    val registrationNumber: String?,
+    val registrationNumber: String? = null,
     val logoUri: String?,
-    val bankName: String?,
-    val accountHolder: String?,
-    val accountNumber: String?,
-    val branchCode: String?,
-    val accountType: String?
+    val bankName: String? = null,
+    val accountHolder: String? = null,
+    val accountNumber: String? = null,
+    val branchCode: String? = null,
+    val accountType: String? = null
 ) {
     companion object {
         const val SINGLETON_ID = 1
