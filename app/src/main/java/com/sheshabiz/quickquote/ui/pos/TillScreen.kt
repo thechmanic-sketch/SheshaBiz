@@ -74,13 +74,29 @@ fun TillScreen(
             Spacer(Modifier.height(8.dp))
             QQTextActionButton(text = "+ Custom item", onClick = { showCustomItemDialog = true })
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 12.dp)
-            ) {
-                items(state.filteredProducts, key = { it.id }) { product ->
-                    ProductTile(product = product, onClick = { viewModel.addProduct(product) })
+            if (state.products.isEmpty()) {
+                Column(modifier = Modifier.padding(top = 24.dp)) {
+                    Text(
+                        "No products in your catalog yet.",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Add products from Products (under More), or tap \"+ Custom item\" above to sell something one-off.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 12.dp)
+                ) {
+                    items(state.filteredProducts, key = { it.id }) { product ->
+                        ProductTile(product = product, onClick = { viewModel.addProduct(product) })
+                    }
                 }
             }
         }

@@ -127,13 +127,20 @@ fun QuickQuoteNavHost(container: AppContainer) {
         ) {
             composable(Routes.SPLASH) {
                 SplashScreen(onFinished = {
-                    val target = when {
-                        !container.preferences.onboardingComplete.value -> Routes.ONBOARDING
-                        !container.preferences.businessSetupComplete.value -> Routes.BUSINESS_SETUP
-                        else -> Routes.DASHBOARD
-                    }
-                    navController.navigate(target) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    scope.launch {
+                        // The "setup complete" flag lives outside the database, so if the
+                        // business profile row is ever missing (e.g. after a data reset) this
+                        // catches the mismatch and sends the user back to set it up again,
+                        // instead of skipping to a Dashboard that can never resolve a profile.
+                        val target = when {
+                            !container.preferences.onboardingComplete.value -> Routes.ONBOARDING
+                            !container.preferences.businessSetupComplete.value -> Routes.BUSINESS_SETUP
+                            container.businessRepository.getProfile() == null -> Routes.BUSINESS_SETUP
+                            else -> Routes.DASHBOARD
+                        }
+                        navController.navigate(target) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
                     }
                 })
             }
