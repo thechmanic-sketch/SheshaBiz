@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 data class ReceiptPreviewUiState(
+    val saleId: Long = 0,
     val data: SaleWithItems? = null,
     val businessProfile: BusinessProfile? = null,
     val isLoading: Boolean = true
@@ -33,8 +34,8 @@ class ReceiptPreviewViewModel(
         saleRepository.observeSaleWithItems(saleId),
         businessRepository.observeProfile()
     ) { data, profile ->
-        ReceiptPreviewUiState(data = data, businessProfile = profile, isLoading = false)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ReceiptPreviewUiState())
+        ReceiptPreviewUiState(saleId = saleId, data = data, businessProfile = profile, isLoading = false)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ReceiptPreviewUiState(saleId = saleId))
 
     suspend fun generatePdfFile(): File? {
         val state = uiState.value

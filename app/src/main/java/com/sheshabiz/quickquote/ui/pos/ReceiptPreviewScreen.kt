@@ -142,8 +142,19 @@ fun ReceiptPreviewScreen(
     val data = state.data
     val profile = state.businessProfile
     if (data == null || profile == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Receipt not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.fillMaxSize()) {
+            ScreenHeader(title = "Receipt", onBack = onBack)
+            Box(modifier = Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = when {
+                        data == null -> "This sale couldn't be found (id: ${state.saleId}). Check Sales history (under More) to see if it was actually saved."
+                        else -> "Your business profile isn't set up yet, so a receipt can't be generated. Go to Settings > Business profile to set it up, then try again."
+                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
         }
         return
     }

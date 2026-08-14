@@ -203,8 +203,11 @@ fun QuickQuoteNavHost(container: AppContainer) {
 
             composable(Routes.DASHBOARD) {
                 val vm = viewModel<DashboardViewModel>(
-                    factory = viewModelFactory { DashboardViewModel(container.businessRepository, container.quoteRepository) }
+                    factory = viewModelFactory {
+                        DashboardViewModel(container.businessRepository, container.quoteRepository, container.invoiceRepository)
+                    }
                 )
+                val themeMode by container.preferences.themeMode.collectAsState()
                 DashboardScreen(
                     viewModel = vm,
                     onNewQuote = { navController.navigate(Routes.createQuote()) },
@@ -223,6 +226,29 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             launchSingleTop = true
                             restoreState = true
                         }
+                    },
+                    onOpenMore = {
+                        navController.navigate(Routes.MORE) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenInvoices = {
+                        navController.navigate(Routes.INVOICES) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    isDarkTheme = themeMode == com.sheshabiz.quickquote.ui.theme.AppThemeMode.DARK,
+                    onToggleTheme = {
+                        val next = if (themeMode == com.sheshabiz.quickquote.ui.theme.AppThemeMode.DARK) {
+                            com.sheshabiz.quickquote.ui.theme.AppThemeMode.LIGHT
+                        } else {
+                            com.sheshabiz.quickquote.ui.theme.AppThemeMode.DARK
+                        }
+                        container.preferences.setThemeMode(next)
                     }
                 )
             }

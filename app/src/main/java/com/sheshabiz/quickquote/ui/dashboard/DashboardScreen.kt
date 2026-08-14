@@ -52,7 +52,11 @@ fun DashboardScreen(
     onNewInvoice: () -> Unit,
     onOpenTill: () -> Unit,
     onOpenQuote: (Long) -> Unit,
-    onSeeAllQuotes: () -> Unit
+    onSeeAllQuotes: () -> Unit,
+    onOpenMore: () -> Unit = {},
+    onOpenInvoices: () -> Unit = {},
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val greeting = remember { greetingForCurrentTime() }
@@ -60,7 +64,13 @@ fun DashboardScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         ScreenTitleHeader(
             title = state.businessName.ifBlank { stringResource(R.string.app_name) },
-            subtitle = greeting
+            subtitle = greeting,
+            onMenuClick = onOpenMore,
+            onSearchClick = onSeeAllQuotes,
+            isDarkTheme = isDarkTheme,
+            onThemeToggle = onToggleTheme,
+            onNotificationsClick = onOpenInvoices,
+            notificationCount = state.overdueInvoiceCount
         )
 
         Column(

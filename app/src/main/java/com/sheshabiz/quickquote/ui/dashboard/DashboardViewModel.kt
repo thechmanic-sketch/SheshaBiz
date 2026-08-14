@@ -2,9 +2,11 @@ package com.sheshabiz.quickquote.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.Quote
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
+import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,18 +20,22 @@ data class DashboardUiState(
     val quotesAccepted: Int = 0,
     val totalQuoted: Double = 0.0,
     val recentQuotes: List<Quote> = emptyList(),
+    val overdueInvoiceCount: Int = 0,
     val isLoading: Boolean = true
 )
 
 class DashboardViewModel(
     businessRepository: BusinessRepository,
-    quoteRepository: QuoteRepository
+    quoteRepository: QuoteRepository,
+    invoiceRepository: InvoiceRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<DashboardUiState> = combine(
         businessRepository.observeProfile(),
-        quoteRepository.observeAll()
-    ) { profile, quotes ->
+        quoteRepository.observeAll(),
+        invoiceRepository.observeAll()
+    ) { profile, quotes, invoices ->
+        val now = System.currentTimeMillis()
         DashboardUiState(
             businessName = profile?.businessName.orEmpty(),
             quotesCreated = quotes.size,
@@ -37,6 +43,7 @@ class DashboardViewModel(
             quotesAccepted = quotes.count { it.status == QuoteStatus.ACCEPTED },
             totalQuoted = quotes.sumOf { it.total },
             recentQuotes = quotes.take(5),
+            overdueInvoiceCount = invoices.count { it.status == InvoiceStatus.UNPAID && it.dueDate < now },
             isLoading = false
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
