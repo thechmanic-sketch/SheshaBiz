@@ -18,6 +18,7 @@ data class Product(
     val trackStock: Boolean,
     val stockQuantity: Double,
     val lowStockThreshold: Double?,
+    val imageUri: String? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

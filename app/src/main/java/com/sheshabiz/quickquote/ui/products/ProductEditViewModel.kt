@@ -1,5 +1,6 @@
 package com.sheshabiz.quickquote.ui.products
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.Product
@@ -18,6 +19,7 @@ data class ProductEditUiState(
     val trackStock: Boolean = false,
     val stockQuantityText: String = "0",
     val lowStockThresholdText: String = "",
+    val imageUri: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val nameError: String? = null,
     val priceError: String? = null,
@@ -30,7 +32,8 @@ data class ProductEditUiState(
 
 class ProductEditViewModel(
     private val repository: ProductRepository,
-    private val existingProductId: Long?
+    private val existingProductId: Long?,
+    private val copyImageToInternalStorage: suspend (Uri) -> String?
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductEditUiState())
@@ -49,6 +52,7 @@ class ProductEditViewModel(
                             trackStock = product.trackStock,
                             stockQuantityText = formatNumber(product.stockQuantity),
                             lowStockThresholdText = product.lowStockThreshold?.let { t -> formatNumber(t) }.orEmpty(),
+                            imageUri = product.imageUri,
                             createdAt = product.createdAt
                         )
                     }
@@ -56,6 +60,17 @@ class ProductEditViewModel(
             }
         }
     }
+
+    fun onImagePicked(uri: Uri) {
+        viewModelScope.launch {
+            val savedPath = copyImageToInternalStorage(uri)
+            if (savedPath != null) {
+                _uiState.update { it.copy(imageUri = savedPath) }
+            }
+        }
+    }
+
+    fun onRemoveImage() = _uiState.update { it.copy(imageUri = null) }
 
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
@@ -90,6 +105,7 @@ class ProductEditViewModel(
                     trackStock = s.trackStock,
                     stockQuantity = if (s.trackStock) (s.stockQuantityText.toDoubleOrNull() ?: 0.0) else 0.0,
                     lowStockThreshold = if (s.trackStock) s.lowStockThresholdText.toDoubleOrNull() else null,
+                    imageUri = s.imageUri,
                     createdAt = if (s.productId == 0L) now else s.createdAt,
                     updatedAt = now
                 )

@@ -6,6 +6,7 @@ import androidx.room.Room
 import com.sheshabiz.quickquote.data.db.AppDatabase
 import com.sheshabiz.quickquote.data.db.MIGRATION_1_2
 import com.sheshabiz.quickquote.data.db.MIGRATION_2_3
+import com.sheshabiz.quickquote.data.db.MIGRATION_3_4
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
@@ -18,6 +19,7 @@ import com.sheshabiz.quickquote.domain.DemoDataSeeder
 import com.sheshabiz.quickquote.domain.PdfGenerator
 import com.sheshabiz.quickquote.domain.ReminderScheduler
 import com.sheshabiz.quickquote.domain.copyLogoToInternalStorage
+import com.sheshabiz.quickquote.domain.copyProductImageToInternalStorage
 
 /** Simple hand-rolled dependency container — no DI framework needed for an app this size. */
 class AppContainer(context: Context) {
@@ -27,7 +29,7 @@ class AppContainer(context: Context) {
         appContext,
         AppDatabase::class.java,
         AppDatabase.DATABASE_NAME
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
 
     val preferences = AppPreferences(appContext)
     val businessRepository = BusinessRepository(database.businessProfileDao())
@@ -44,4 +46,5 @@ class AppContainer(context: Context) {
     val reminderScheduler = ReminderScheduler(appContext)
 
     suspend fun copyLogo(uri: Uri): String? = copyLogoToInternalStorage(appContext, uri)
+    suspend fun copyProductImage(uri: Uri): String? = copyProductImageToInternalStorage(appContext, uri)
 }

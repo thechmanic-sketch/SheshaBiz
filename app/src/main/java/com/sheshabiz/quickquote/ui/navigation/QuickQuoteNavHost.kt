@@ -308,7 +308,13 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 val productId = productIdArg.takeIf { it > 0 }
                 val vm = viewModel<ProductEditViewModel>(
                     key = "product_edit_$productIdArg",
-                    factory = viewModelFactory { ProductEditViewModel(container.productRepository, productId) }
+                    factory = viewModelFactory {
+                        ProductEditViewModel(
+                            container.productRepository,
+                            productId,
+                            copyImageToInternalStorage = { uri -> container.copyProductImage(uri) }
+                        )
+                    }
                 )
                 ProductEditScreen(
                     viewModel = vm,

@@ -189,14 +189,18 @@ private fun ProductTile(product: Product, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(product.name, fontWeight = FontWeight.Medium)
-            if (product.trackStock) {
-                Text(
-                    "Stock: ${formatQty(product.stockQuantity)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            com.sheshabiz.quickquote.ui.products.ProductThumbnail(imageUri = product.imageUri, size = 40.dp)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(product.name, fontWeight = FontWeight.Medium)
+                if (product.trackStock) {
+                    Text(
+                        "Stock: ${formatQty(product.stockQuantity)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
         Text(CurrencyFormat.format(product.unitPrice), fontWeight = FontWeight.SemiBold)

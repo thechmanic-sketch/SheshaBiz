@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,14 +70,18 @@ fun ProductPickerSheet(
                             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(text = product.name, fontWeight = FontWeight.Medium)
-                                if (product.trackStock) {
-                                    Text(
-                                        text = "Stock: ${formatQty(product.stockQuantity)}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                ProductThumbnail(imageUri = product.imageUri, size = 40.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(text = product.name, fontWeight = FontWeight.Medium)
+                                    if (product.trackStock) {
+                                        Text(
+                                            text = "Stock: ${formatQty(product.stockQuantity)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                             Text(CurrencyFormat.format(product.unitPrice), fontWeight = FontWeight.SemiBold)
