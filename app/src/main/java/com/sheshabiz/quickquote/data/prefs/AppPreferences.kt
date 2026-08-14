@@ -50,7 +50,7 @@ class AppPreferences(context: Context) {
     private fun readThemeMode(): AppThemeMode =
         prefs.getString(KEY_THEME_MODE, null)?.let {
             runCatching { AppThemeMode.valueOf(it) }.getOrNull()
-        } ?: AppThemeMode.SYSTEM
+        } ?: AppThemeMode.LIGHT
 
     var quoteNumberPrefix: String
         get() = prefs.getString(KEY_QUOTE_PREFIX, DEFAULT_PREFIX) ?: DEFAULT_PREFIX

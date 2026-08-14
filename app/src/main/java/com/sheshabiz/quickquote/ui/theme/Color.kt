@@ -2,8 +2,10 @@ package com.sheshabiz.quickquote.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BrandPrimary = Color(0xFF2E9E8B)
-val BrandPrimaryDark = Color(0xFF22796A)
+val BrandPrimary = Color(0xFF0BA84A)
+val BrandPrimaryDark = Color(0xFF067A34)
+val BrandGradientStart = Color(0xFF0BA84A)
+val BrandGradientEnd = Color(0xFF04642B)
 val OnPrimary = Color(0xFFFFFFFF)
 
 val BgLight = Color(0xFFF7F7F5)
@@ -17,7 +19,7 @@ val TextMuted = Color(0xFF8C8C8C)
 
 val StatusDraft = Color(0xFF8C8C8C)
 val StatusSent = Color(0xFF3B82C4)
-val StatusAccepted = Color(0xFF2E9E8B)
+val StatusAccepted = Color(0xFF0BA84A)
 val StatusRejected = Color(0xFFC4453B)
 
 val ErrorRed = Color(0xFFC4453B)

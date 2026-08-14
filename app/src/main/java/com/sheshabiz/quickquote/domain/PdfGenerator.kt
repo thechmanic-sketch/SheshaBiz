@@ -38,7 +38,7 @@ class PdfGenerator(private val context: Context) {
     private val contentWidth = pageWidth - margin * 2
     private val footerReserve = 30f
 
-    private val brandColor = Color.parseColor("#2E9E8B")
+    private val brandColor = Color.parseColor("#0BA84A")
     private val mutedColor = Color.parseColor("#8C8C8C")
     private val textColor = Color.parseColor("#101012")
     private val dividerColor = Color.parseColor("#E7E7E3")
