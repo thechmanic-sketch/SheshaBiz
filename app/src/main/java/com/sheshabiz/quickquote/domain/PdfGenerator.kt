@@ -21,6 +21,7 @@ import com.sheshabiz.quickquote.domain.model.InvoiceWithItems
 import com.sheshabiz.quickquote.domain.model.PrintableDocument
 import com.sheshabiz.quickquote.domain.model.PrintableItem
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
+import com.sheshabiz.quickquote.domain.model.ReportPdfData
 import com.sheshabiz.quickquote.domain.model.SaleWithItems
 import java.io.File
 import java.io.FileOutputStream
@@ -43,6 +44,7 @@ class PdfGenerator(private val context: Context) {
     private val textColor = Color.parseColor("#101012")
     private val dividerColor = Color.parseColor("#E7E7E3")
     private val tableHeaderBg = Color.parseColor("#EAF6F3")
+    private val errorColor = Color.parseColor("#C4453B")
 
     fun generateForQuote(profile: BusinessProfile, data: QuoteWithItems): File {
         val quote = data.quote
@@ -136,6 +138,97 @@ class PdfGenerator(private val context: Context) {
     }
 
     fun fileFor(kind: DocumentKind, number: String): File = outputFile(kind, number)
+
+    /** A one-page summary report (sales/quotes/invoices totals for a period) meant to be
+     * printed at close of day — a simpler layout than the itemised quote/invoice/receipt
+     * documents, since there's no line-item table here. */
+    fun generateReport(profile: BusinessProfile, data: ReportPdfData): File {
+        val pdfDoc = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth.toInt(), pageHeight.toInt(), 1).create()
+        val page = pdfDoc.startPage(pageInfo)
+        val canvas = page.canvas
+        var y = margin
+
+        val logoBitmap = decodeLogo(profile.logoUri)
+        val headerTextX: Float
+        if (logoBitmap != null) {
+            val box = 56f
+            val scaled = scaleBitmapToBox(logoBitmap, box)
+            canvas.drawBitmap(scaled, margin, y, null)
+            headerTextX = margin + box + 14f
+        } else {
+            headerTextX = margin
+        }
+        val nameP = textPaint(20f, true, textColor)
+        canvas.drawText(profile.businessName, headerTextX, y + 20f, nameP)
+        var contactY = y + 38f
+        val smallMuted = textPaint(10.5f, false, mutedColor)
+        val contactLines = listOfNotNull(
+            profile.phone.takeIf { it.isNotBlank() },
+            profile.address.takeIf { it.isNotBlank() }
+        )
+        for (line in contactLines) {
+            canvas.drawText(line, headerTextX, contactY, smallMuted)
+            contactY += 13f
+        }
+        y = maxOf(contactY, y + 56f) + 10f
+
+        drawDivider(canvas, y)
+        y += 24f
+
+        val titleP = textPaint(18f, true, brandColor)
+        canvas.drawText("SALES REPORT", margin, y + 4f, titleP)
+        canvas.drawTextRightAligned(data.periodLabel.uppercase(), margin + contentWidth, y + 4f, textPaint(11f, true, mutedColor))
+        y += 26f
+        canvas.drawText("Generated ${CurrencyFormat.formatDate(data.generatedAt)}", margin, y, textPaint(9.5f, false, mutedColor))
+        y += 26f
+
+        drawDivider(canvas, y)
+        y += 26f
+
+        fun sectionHeader(title: String) {
+            canvas.drawText(title.uppercase(), margin, y, textPaint(10f, true, mutedColor))
+            y += 22f
+        }
+
+        fun statRow(label: String, value: String, valueColor: Int = textColor) {
+            canvas.drawText(label, margin, y, textPaint(11.5f, false, textColor))
+            canvas.drawTextRightAligned(value, margin + contentWidth, y, textPaint(12.5f, true, valueColor))
+            y += 24f
+        }
+
+        sectionHeader("Point of sale")
+        statRow("Sales made", data.salesCount.toString())
+        statRow("Total sales", CurrencyFormat.format(data.salesTotal), brandColor)
+        y += 14f
+
+        sectionHeader("Quotations")
+        statRow("Quotes created", data.quotesCreated.toString())
+        statRow("Quotes accepted", data.quotesAccepted.toString())
+        statRow("Total quoted", CurrencyFormat.format(data.quotesTotal), brandColor)
+        y += 14f
+
+        sectionHeader("Invoices")
+        statRow("Paid (${data.invoicesPaidCount})", CurrencyFormat.format(data.invoicesPaidTotal))
+        statRow("Unpaid (${data.invoicesUnpaidCount})", CurrencyFormat.format(data.invoicesUnpaidTotal))
+        statRow(
+            "Overdue",
+            data.invoicesOverdueCount.toString(),
+            if (data.invoicesOverdueCount > 0) errorColor else textColor
+        )
+        y += 30f
+
+        drawDivider(canvas, y)
+        y += 24f
+        canvas.drawCenteredText("End of report.", pageWidth / 2f, y, textPaint(11f, false, mutedColor))
+
+        pdfDoc.finishPage(page)
+        val dir = File(context.cacheDir, "documents").apply { mkdirs() }
+        val outFile = File(dir, "Report-${data.generatedAt}.pdf")
+        FileOutputStream(outFile).use { pdfDoc.writeTo(it) }
+        pdfDoc.close()
+        return outFile
+    }
 
     private fun render(profile: BusinessProfile, doc: PrintableDocument): File {
         val pdfDoc = PdfDocument()

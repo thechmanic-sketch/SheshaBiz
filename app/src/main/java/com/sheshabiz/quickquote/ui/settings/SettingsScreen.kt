@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.BuildConfig
 import com.sheshabiz.quickquote.R
+import com.sheshabiz.quickquote.domain.Country
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
@@ -63,6 +64,7 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var showDisableLockConfirm by remember { mutableStateOf(false) }
+    var showCountryPicker by remember { mutableStateOf(false) }
     val biometricAvailable = remember {
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
             BiometricManager.BIOMETRIC_SUCCESS
@@ -254,7 +256,11 @@ fun SettingsScreen(
 
         SectionLabel(stringResource(R.string.settings_currency))
         SettingsCard {
-            SettingsRow(title = "ZAR (R)", subtitle = "South African Rand", onClick = null)
+            SettingsRow(
+                title = "${state.country.displayName} — ${state.country.currencyCode}",
+                subtitle = "Currency symbol: ${state.country.currencySymbol}",
+                onClick = { showCountryPicker = true }
+            )
         }
         Spacer(Modifier.height(20.dp))
 
@@ -306,6 +312,49 @@ fun SettingsScreen(
         }
         Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (showCountryPicker) {
+        AlertDialog(
+            onDismissRequest = { showCountryPicker = false },
+            title = { Text("Country & currency") },
+            text = {
+                Column {
+                    Country.entries.forEach { country ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.onCountryChange(country)
+                                    showCountryPicker = false
+                                }
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(country.displayName)
+                                Text(
+                                    "${country.currencyCode} (${country.currencySymbol})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            androidx.compose.material3.RadioButton(
+                                selected = state.country == country,
+                                onClick = {
+                                    viewModel.onCountryChange(country)
+                                    showCountryPicker = false
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCountryPicker = false }) { Text("Done") }
+            }
+        )
     }
 
     if (showDisableLockConfirm) {

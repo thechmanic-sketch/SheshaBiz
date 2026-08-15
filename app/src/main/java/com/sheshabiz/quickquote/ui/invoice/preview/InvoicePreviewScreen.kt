@@ -258,6 +258,7 @@ private fun InvoiceDocumentPreview(profile: BusinessProfile, invoice: Invoice, i
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)

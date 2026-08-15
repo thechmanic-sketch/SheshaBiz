@@ -142,6 +142,11 @@ class TillViewModel(
 
     fun onClearCustomer() = _uiState.update { it.copy(customerId = null, customerName = "") }
 
+    /** Clears the one-shot navigation signal once the screen has acted on it, so re-entering
+     * this (long-lived, tab-scoped) ViewModel's screen doesn't immediately re-navigate to the
+     * same receipt again — which is what made the back button from Receipt look broken. */
+    fun onSaleNavigationHandled() = _uiState.update { it.copy(completedSaleId = null) }
+
     fun onVatEnabledChange(enabled: Boolean) = _uiState.update { it.copy(vatEnabled = enabled) }
     fun onPaymentMethodChange(method: PaymentMethod) = _uiState.update { it.copy(paymentMethod = method) }
     fun dismissError() = _uiState.update { it.copy(error = null) }

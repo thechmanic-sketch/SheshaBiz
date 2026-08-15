@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ fun HeaderLogo(size: Dp = 36.dp, modifier: Modifier = Modifier) {
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = modifier
                 .size(size)
                 .clip(CircleShape)

@@ -276,6 +276,7 @@ private fun QuoteDocumentPreview(profile: BusinessProfile, quote: Quote, items: 
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)

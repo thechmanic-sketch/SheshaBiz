@@ -62,7 +62,10 @@ fun TillScreen(
     var showCustomItemDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.completedSaleId) {
-        state.completedSaleId?.let(onSaleCompleted)
+        state.completedSaleId?.let {
+            onSaleCompleted(it)
+            viewModel.onSaleNavigationHandled()
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

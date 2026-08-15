@@ -203,6 +203,7 @@ private fun ReceiptDocumentPreview(profile: BusinessProfile, sale: Sale, items: 
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                     modifier = Modifier.size(48.dp).clip(CircleShape)
                 )
                 Spacer(Modifier.width(12.dp))

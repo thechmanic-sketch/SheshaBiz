@@ -2,6 +2,8 @@ package com.sheshabiz.quickquote.data.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.sheshabiz.quickquote.domain.Country
+import com.sheshabiz.quickquote.domain.CurrencyFormat
 import com.sheshabiz.quickquote.ui.theme.AppThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +25,22 @@ class AppPreferences(context: Context) {
 
     private val _businessSetupComplete = MutableStateFlow(prefs.getBoolean(KEY_BUSINESS_SETUP_DONE, false))
     val businessSetupComplete: StateFlow<Boolean> = _businessSetupComplete
+
+    private val _country = MutableStateFlow(readCountry())
+    val country: StateFlow<Country> = _country
+
+    init {
+        CurrencyFormat.setCountry(_country.value)
+    }
+
+    fun setCountry(country: Country) {
+        prefs.edit().putString(KEY_COUNTRY, country.name).apply()
+        _country.value = country
+        CurrencyFormat.setCountry(country)
+    }
+
+    private fun readCountry(): Country =
+        prefs.getString(KEY_COUNTRY, null)?.let { runCatching { Country.valueOf(it) }.getOrNull() } ?: Country.SOUTH_AFRICA
 
     private val _overdueRemindersEnabled = MutableStateFlow(prefs.getBoolean(KEY_OVERDUE_REMINDERS_ENABLED, false))
     val overdueRemindersEnabled: StateFlow<Boolean> = _overdueRemindersEnabled
@@ -145,8 +163,8 @@ class AppPreferences(context: Context) {
         get() = prefs.getString(KEY_PAYMENT_TERMS, DEFAULT_PAYMENT_TERMS) ?: DEFAULT_PAYMENT_TERMS
         set(value) = prefs.edit().putString(KEY_PAYMENT_TERMS, value).apply()
 
-    val currencySymbol: String get() = "R"
-    val currencyCode: String get() = "ZAR"
+    val currencySymbol: String get() = _country.value.currencySymbol
+    val currencyCode: String get() = _country.value.currencyCode
 
     companion object {
         private const val PREFS_NAME = "quickquote_prefs"
@@ -166,6 +184,7 @@ class AppPreferences(context: Context) {
         private const val KEY_APP_LOCK_ENABLED = "app_lock_enabled"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_PIN_HASH = "pin_hash"
+        private const val KEY_COUNTRY = "country"
         const val DEFAULT_PREFIX = "Q"
         const val DEFAULT_INVOICE_PREFIX = "INV"
         const val DEFAULT_SALE_PREFIX = "R"

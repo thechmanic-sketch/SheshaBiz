@@ -4,14 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
+import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.data.repository.SaleRepository
+import com.sheshabiz.quickquote.domain.PdfGenerator
+import com.sheshabiz.quickquote.domain.model.ReportPdfData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import java.io.File
 import java.util.Calendar
 
 enum class ReportPeriod(val label: String) {
@@ -39,7 +44,9 @@ data class ReportsUiState(
 class ReportsViewModel(
     private val saleRepository: SaleRepository,
     private val quoteRepository: QuoteRepository,
-    private val invoiceRepository: InvoiceRepository
+    private val invoiceRepository: InvoiceRepository,
+    private val businessRepository: BusinessRepository,
+    private val pdfGenerator: PdfGenerator
 ) : ViewModel() {
 
     private val period = MutableStateFlow(ReportPeriod.MONTH)
@@ -77,6 +84,28 @@ class ReportsViewModel(
 
     fun onPeriodChange(newPeriod: ReportPeriod) {
         period.value = newPeriod
+    }
+
+    /** Generates the printable PDF for whatever is currently on screen — null if the
+     * business profile isn't set up yet, since the PDF header needs it. */
+    suspend fun generatePdfFile(): File? {
+        val profile = businessRepository.observeProfile().first() ?: return null
+        val s = uiState.value
+        val data = ReportPdfData(
+            periodLabel = s.period.label,
+            generatedAt = System.currentTimeMillis(),
+            salesTotal = s.salesTotal,
+            salesCount = s.salesCount,
+            quotesCreated = s.quotesCreated,
+            quotesAccepted = s.quotesAccepted,
+            quotesTotal = s.quotesTotal,
+            invoicesPaidTotal = s.invoicesPaidTotal,
+            invoicesPaidCount = s.invoicesPaidCount,
+            invoicesUnpaidTotal = s.invoicesUnpaidTotal,
+            invoicesUnpaidCount = s.invoicesUnpaidCount,
+            invoicesOverdueCount = s.invoicesOverdueCount
+        )
+        return pdfGenerator.generateReport(profile, data)
     }
 
     private fun cutoffFor(selectedPeriod: ReportPeriod, now: Long): Long = when (selectedPeriod) {

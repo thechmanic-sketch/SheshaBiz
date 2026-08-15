@@ -343,7 +343,13 @@ fun QuickQuoteNavHost(container: AppContainer) {
             composable(Routes.REPORTS) {
                 val vm = viewModel<ReportsViewModel>(
                     factory = viewModelFactory {
-                        ReportsViewModel(container.saleRepository, container.quoteRepository, container.invoiceRepository)
+                        ReportsViewModel(
+                            container.saleRepository,
+                            container.quoteRepository,
+                            container.invoiceRepository,
+                            container.businessRepository,
+                            container.pdfGenerator
+                        )
                     }
                 )
                 ReportsScreen(

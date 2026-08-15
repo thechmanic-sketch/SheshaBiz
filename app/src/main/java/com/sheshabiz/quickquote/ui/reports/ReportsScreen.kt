@@ -1,5 +1,6 @@
 package com.sheshabiz.quickquote.ui.reports
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,12 +21,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.domain.CurrencyFormat
+import com.sheshabiz.quickquote.domain.PrintHelper
+import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.SectionLabel
 import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReportsScreen(
@@ -33,6 +39,23 @@ fun ReportsScreen(
     onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun printReport() {
+        scope.launch {
+            val file = viewModel.generatePdfFile()
+            if (file != null) {
+                PrintHelper.printPdf(context, file, "Report — ${state.period.label}")
+            } else {
+                Toast.makeText(
+                    context,
+                    "Set up your business profile first (Settings > Business profile).",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         ScreenTitleHeader(title = "Reports", onBack = onBack)
@@ -57,6 +80,9 @@ fun ReportsScreen(
                     )
                 }
             }
+            Spacer(Modifier.height(14.dp))
+
+            QQOutlinedButton(text = "Print report", onClick = ::printReport)
             Spacer(Modifier.height(24.dp))
 
             SectionLabel("Sales (POS)")

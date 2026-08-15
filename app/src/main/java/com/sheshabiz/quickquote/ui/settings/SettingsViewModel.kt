@@ -6,6 +6,7 @@ import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.domain.BackupService
+import com.sheshabiz.quickquote.domain.Country
 import com.sheshabiz.quickquote.domain.ReminderScheduler
 import com.sheshabiz.quickquote.ui.theme.AppThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,8 @@ data class SettingsUiState(
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val overdueRemindersEnabled: Boolean = false,
     val appLockEnabled: Boolean = false,
-    val biometricEnabled: Boolean = false
+    val biometricEnabled: Boolean = false,
+    val country: Country = Country.SOUTH_AFRICA
 )
 
 class SettingsViewModel(
@@ -48,8 +50,8 @@ class SettingsViewModel(
         combine(quotePrefix, invoicePrefix, vatEnabledDefault, vatRate, paymentTerms) { qp, ip, v, r, t ->
             listOf(qp, ip, v, r, t)
         },
-        combine(preferences.appLockEnabled, preferences.biometricEnabled) { lockEnabled, bioEnabled ->
-            lockEnabled to bioEnabled
+        combine(preferences.appLockEnabled, preferences.biometricEnabled, preferences.country) { lockEnabled, bioEnabled, country ->
+            Triple(lockEnabled, bioEnabled, country)
         }
     ) { profile, theme, remindersEnabled, fields, lockState ->
         @Suppress("UNCHECKED_CAST")
@@ -63,7 +65,8 @@ class SettingsViewModel(
             themeMode = theme,
             overdueRemindersEnabled = remindersEnabled,
             appLockEnabled = lockState.first,
-            biometricEnabled = lockState.second
+            biometricEnabled = lockState.second,
+            country = lockState.third
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -75,6 +78,8 @@ class SettingsViewModel(
     fun onDisableAppLock() = preferences.disableAppLock()
 
     fun onBiometricChange(enabled: Boolean) = preferences.setBiometricEnabled(enabled)
+
+    fun onCountryChange(country: Country) = preferences.setCountry(country)
 
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
