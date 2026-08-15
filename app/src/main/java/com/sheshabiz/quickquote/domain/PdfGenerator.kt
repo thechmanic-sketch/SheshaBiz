@@ -132,7 +132,9 @@ class PdfGenerator(private val context: Context) {
             vatAmount = sale.vatAmount,
             total = sale.total,
             notes = sale.notes,
-            paymentTerms = null
+            paymentTerms = null,
+            amountTendered = sale.amountTendered,
+            changeGiven = sale.changeGiven
         )
         return render(profile, document)
     }
@@ -428,6 +430,17 @@ class PdfGenerator(private val context: Context) {
         canvas.drawText("TOTAL", totalsX, y + 15f, totalLabelWhite)
         canvas.drawTextRightAligned(CurrencyFormat.format(doc.total), totalsValueX - 6f, y + 16f, totalValueWhite)
         y += 42f
+
+        if (doc.amountTendered != null) {
+            canvas.drawText("Cash tendered", totalsX, y, totalLabel)
+            canvas.drawTextRightAligned(CurrencyFormat.format(doc.amountTendered), totalsValueX, y, totalValue)
+            y += 20f
+        }
+        if (doc.changeGiven != null) {
+            canvas.drawText("Change", totalsX, y, totalLabel)
+            canvas.drawTextRightAligned(CurrencyFormat.format(doc.changeGiven), totalsValueX, y, totalValue)
+            y += 20f
+        }
 
         // ---- Notes / payment terms ----
         val notesAndTerms = listOfNotNull(

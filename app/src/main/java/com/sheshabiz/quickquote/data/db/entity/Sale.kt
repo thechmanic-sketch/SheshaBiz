@@ -34,5 +34,8 @@ data class Sale(
     val total: Double,
     val paymentMethod: PaymentMethod,
     val notes: String?,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Only set for cash sales where the cashier entered a tendered amount at the till. */
+    val amountTendered: Double? = null,
+    val changeGiven: Double? = null
 )

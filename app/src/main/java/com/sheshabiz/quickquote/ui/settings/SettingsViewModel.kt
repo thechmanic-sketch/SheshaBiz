@@ -20,6 +20,7 @@ data class SettingsUiState(
     val businessProfile: BusinessProfile? = null,
     val quotePrefix: String = AppPreferences.DEFAULT_PREFIX,
     val invoicePrefix: String = AppPreferences.DEFAULT_INVOICE_PREFIX,
+    val receiptPrefix: String = AppPreferences.DEFAULT_SALE_PREFIX,
     val vatEnabledDefault: Boolean = true,
     val vatRate: String = AppPreferences.DEFAULT_VAT_RATE.toString(),
     val paymentTerms: String = AppPreferences.DEFAULT_PAYMENT_TERMS,
@@ -39,6 +40,7 @@ class SettingsViewModel(
 
     private val quotePrefix = MutableStateFlow(preferences.quoteNumberPrefix)
     private val invoicePrefix = MutableStateFlow(preferences.invoiceNumberPrefix)
+    private val receiptPrefix = MutableStateFlow(preferences.saleNumberPrefix)
     private val vatEnabledDefault = MutableStateFlow(preferences.defaultVatEnabled)
     private val vatRate = MutableStateFlow(preferences.vatRate.let(::formatNumber))
     private val paymentTerms = MutableStateFlow(preferences.defaultPaymentTerms)
@@ -47,8 +49,11 @@ class SettingsViewModel(
         businessRepository.observeProfile(),
         preferences.themeMode,
         preferences.overdueRemindersEnabled,
-        combine(quotePrefix, invoicePrefix, vatEnabledDefault, vatRate, paymentTerms) { qp, ip, v, r, t ->
-            listOf(qp, ip, v, r, t)
+        combine(
+            quotePrefix, invoicePrefix, receiptPrefix, vatEnabledDefault,
+            combine(vatRate, paymentTerms) { r, t -> r to t }
+        ) { qp, ip, rp, v, rt ->
+            listOf(qp, ip, rp, v, rt.first, rt.second)
         },
         combine(preferences.appLockEnabled, preferences.biometricEnabled, preferences.country) { lockEnabled, bioEnabled, country ->
             Triple(lockEnabled, bioEnabled, country)
@@ -59,9 +64,10 @@ class SettingsViewModel(
             businessProfile = profile,
             quotePrefix = fields[0] as String,
             invoicePrefix = fields[1] as String,
-            vatEnabledDefault = fields[2] as Boolean,
-            vatRate = fields[3] as String,
-            paymentTerms = fields[4] as String,
+            receiptPrefix = fields[2] as String,
+            vatEnabledDefault = fields[3] as Boolean,
+            vatRate = fields[4] as String,
+            paymentTerms = fields[5] as String,
             themeMode = theme,
             overdueRemindersEnabled = remindersEnabled,
             appLockEnabled = lockState.first,
@@ -94,6 +100,12 @@ class SettingsViewModel(
         val prefix = value.uppercase().ifBlank { AppPreferences.DEFAULT_INVOICE_PREFIX }
         preferences.invoiceNumberPrefix = prefix
         invoicePrefix.value = prefix
+    }
+
+    fun onReceiptPrefixChange(value: String) {
+        val prefix = value.uppercase().ifBlank { AppPreferences.DEFAULT_SALE_PREFIX }
+        preferences.saleNumberPrefix = prefix
+        receiptPrefix.value = prefix
     }
 
     fun onVatDefaultChange(enabled: Boolean) {

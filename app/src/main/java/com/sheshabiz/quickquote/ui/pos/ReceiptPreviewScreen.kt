@@ -268,6 +268,12 @@ private fun ReceiptDocumentPreview(profile: BusinessProfile, sale: Sale, items: 
             Text(CurrencyFormat.format(sale.total), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
         }
 
+        if (sale.amountTendered != null || sale.changeGiven != null) {
+            Spacer(Modifier.height(8.dp))
+            sale.amountTendered?.let { TotalLine("Cash tendered", CurrencyFormat.format(it)) }
+            sale.changeGiven?.let { TotalLine("Change", CurrencyFormat.format(it)) }
+        }
+
         Spacer(Modifier.height(24.dp))
         Text(
             text = "Thank you for your business.",

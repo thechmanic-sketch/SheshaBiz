@@ -139,3 +139,11 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE `products` ADD COLUMN `imageUri` TEXT")
     }
 }
+
+/** v4 -> v5: cash tendered/change on a sale, shown on the receipt. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `sales` ADD COLUMN `amountTendered` REAL")
+        db.execSQL("ALTER TABLE `sales` ADD COLUMN `changeGiven` REAL")
+    }
+}

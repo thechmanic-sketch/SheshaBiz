@@ -185,6 +185,8 @@ object BackupManager {
                 put("paymentMethod", sale.paymentMethod.name)
                 put("notes", sale.notes)
                 put("createdAt", sale.createdAt)
+                put("amountTendered", sale.amountTendered)
+                put("changeGiven", sale.changeGiven)
                 put("items", itemsToJson(items) { item ->
                     JSONObject().apply {
                         put("description", item.description)
@@ -355,7 +357,9 @@ object BackupManager {
                     total = s.optDouble("total", 0.0),
                     paymentMethod = runCatching { PaymentMethod.valueOf(s.optString("paymentMethod")) }.getOrDefault(PaymentMethod.CASH),
                     notes = s.optStringOrNull("notes"),
-                    createdAt = s.optLong("createdAt", System.currentTimeMillis())
+                    createdAt = s.optLong("createdAt", System.currentTimeMillis()),
+                    amountTendered = if (s.has("amountTendered") && !s.isNull("amountTendered")) s.optDouble("amountTendered") else null,
+                    changeGiven = if (s.has("changeGiven") && !s.isNull("changeGiven")) s.optDouble("changeGiven") else null
                 )
             )
             itemsBySaleIndex.add(parseItems(s.optJSONArray("items")) { desc, qty, price, total, order ->

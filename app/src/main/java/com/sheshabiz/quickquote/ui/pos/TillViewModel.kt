@@ -191,7 +191,9 @@ class TillViewModel(
                 total = totals.total,
                 paymentMethod = s.paymentMethod,
                 notes = null,
-                createdAt = now
+                createdAt = now,
+                amountTendered = s.changeDue?.let { s.amountTenderedText.toDoubleOrNull() },
+                changeGiven = s.changeDue?.coerceAtLeast(0.0)
             )
             val items = s.cart.mapIndexed { index, line ->
                 SaleItem(

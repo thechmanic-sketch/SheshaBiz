@@ -7,6 +7,7 @@ import com.sheshabiz.quickquote.data.db.AppDatabase
 import com.sheshabiz.quickquote.data.db.MIGRATION_1_2
 import com.sheshabiz.quickquote.data.db.MIGRATION_2_3
 import com.sheshabiz.quickquote.data.db.MIGRATION_3_4
+import com.sheshabiz.quickquote.data.db.MIGRATION_4_5
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
@@ -29,7 +30,7 @@ class AppContainer(context: Context) {
         appContext,
         AppDatabase::class.java,
         AppDatabase.DATABASE_NAME
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
 
     val preferences = AppPreferences(appContext)
     val businessRepository = BusinessRepository(database.businessProfileDao())

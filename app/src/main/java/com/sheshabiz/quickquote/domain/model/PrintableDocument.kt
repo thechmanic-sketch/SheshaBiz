@@ -39,5 +39,7 @@ data class PrintableDocument(
     val vatAmount: Double,
     val total: Double,
     val notes: String?,
-    val paymentTerms: String?
+    val paymentTerms: String?,
+    val amountTendered: Double? = null,
+    val changeGiven: Double? = null
 )

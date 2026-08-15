@@ -29,7 +29,7 @@ import com.sheshabiz.quickquote.data.db.entity.SaleItem
         Invoice::class, InvoiceItem::class,
         Product::class, Sale::class, SaleItem::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
