@@ -52,6 +52,7 @@ import com.sheshabiz.quickquote.data.db.entity.DiscountType
 import com.sheshabiz.quickquote.data.db.entity.Quote
 import com.sheshabiz.quickquote.data.db.entity.QuoteItem
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
+import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.domain.CurrencyFormat
 import com.sheshabiz.quickquote.domain.DownloadsSaver
 import com.sheshabiz.quickquote.domain.WhatsAppShare
@@ -61,16 +62,19 @@ import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
 import com.sheshabiz.quickquote.ui.common.StatusChip
+import com.sheshabiz.quickquote.ui.lock.PinConfirmDialog
 import kotlinx.coroutines.launch
 
 @Composable
 fun QuotePreviewScreen(
     viewModel: QuotePreviewViewModel,
+    preferences: AppPreferences,
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onDuplicated: (Long) -> Unit,
     onConvertedToInvoice: (Long) -> Unit,
-    onDeleted: () -> Unit
+    onDeleted: () -> Unit,
+    onNeedsPinSetup: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val deleted by viewModel.deleted.collectAsState()
@@ -79,6 +83,7 @@ fun QuotePreviewScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPinConfirm by remember { mutableStateOf(false) }
     var pendingDownload by remember { mutableStateOf(false) }
 
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -234,7 +239,7 @@ fun QuotePreviewScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.deleteQuote()
+                    showPinConfirm = true
                 }) {
                     Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
@@ -242,6 +247,18 @@ fun QuotePreviewScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
             }
+        )
+    }
+
+    if (showPinConfirm) {
+        PinConfirmDialog(
+            preferences = preferences,
+            onConfirmed = {
+                showPinConfirm = false
+                viewModel.deleteQuote()
+            },
+            onDismiss = { showPinConfirm = false },
+            onNeedsSetup = onNeedsPinSetup
         )
     }
 }

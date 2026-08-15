@@ -145,6 +145,32 @@ fun TillScreen(
                     )
                 }
             }
+
+            if (state.paymentMethod == PaymentMethod.CASH) {
+                Spacer(Modifier.height(12.dp))
+                QQTextField(
+                    value = state.amountTenderedText,
+                    onValueChange = viewModel::onAmountTenderedChange,
+                    label = "Amount tendered",
+                    keyboardType = KeyboardType.Decimal
+                )
+                state.changeDue?.let { change ->
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            text = if (change < 0) "Amount short" else "Change due",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (change < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = CurrencyFormat.format(kotlin.math.abs(change)),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (change < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(12.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

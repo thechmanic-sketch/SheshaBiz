@@ -42,21 +42,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
+import com.sheshabiz.quickquote.ui.lock.PinConfirmDialog
 
 @Composable
 fun ProductEditScreen(
     viewModel: ProductEditViewModel,
+    preferences: AppPreferences,
     isEditing: Boolean,
     onBack: () -> Unit,
     onSaved: (Long) -> Unit,
-    onDeleted: () -> Unit
+    onDeleted: () -> Unit,
+    onNeedsPinSetup: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPinConfirm by remember { mutableStateOf(false) }
 
     val pickImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -167,7 +172,7 @@ fun ProductEditScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.delete()
+                    showPinConfirm = true
                 }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
@@ -175,6 +180,18 @@ fun ProductEditScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
             }
+        )
+    }
+
+    if (showPinConfirm) {
+        PinConfirmDialog(
+            preferences = preferences,
+            onConfirmed = {
+                showPinConfirm = false
+                viewModel.delete()
+            },
+            onDismiss = { showPinConfirm = false },
+            onNeedsSetup = onNeedsPinSetup
         )
     }
 }

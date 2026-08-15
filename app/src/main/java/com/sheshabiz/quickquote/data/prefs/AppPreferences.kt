@@ -60,6 +60,8 @@ class AppPreferences(context: Context) {
         _appLockEnabled.value = true
     }
 
+    fun hasPin(): Boolean = prefs.contains(KEY_PIN_HASH)
+
     fun verifyPin(pin: String): Boolean {
         val stored = prefs.getString(KEY_PIN_HASH, null) ?: return false
         return stored == PinHasher.hash(pin)

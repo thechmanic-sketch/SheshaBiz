@@ -324,6 +324,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
                 SettingsScreen(
                     viewModel = vm,
+                    preferences = container.preferences,
                     onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) },
                     onSetupPin = { navController.navigate(Routes.PIN_SETUP) },
                     onBack = { navController.popBackStack() }
@@ -388,10 +389,12 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
                 ProductEditScreen(
                     viewModel = vm,
+                    preferences = container.preferences,
                     isEditing = productId != null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
-                    onDeleted = { navController.popBackStack() }
+                    onDeleted = { navController.popBackStack() },
+                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) }
                 )
             }
 
@@ -489,6 +492,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
                 QuotePreviewScreen(
                     viewModel = vm,
+                    preferences = container.preferences,
                     onBack = { navController.popBackStack() },
                     onEdit = { id -> navController.navigate(Routes.createQuote(id)) },
                     onDuplicated = { newId ->
@@ -499,7 +503,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     onConvertedToInvoice = { invoiceId ->
                         navController.navigate(Routes.invoicePreview(invoiceId))
                     },
-                    onDeleted = { navController.popBackStack() }
+                    onDeleted = { navController.popBackStack() },
+                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) }
                 )
             }
 
@@ -565,9 +570,11 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
                 InvoicePreviewScreen(
                     viewModel = vm,
+                    preferences = container.preferences,
                     onBack = { navController.popBackStack() },
                     onEdit = { id -> navController.navigate(Routes.createInvoice(id)) },
-                    onDeleted = { navController.popBackStack() }
+                    onDeleted = { navController.popBackStack() },
+                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) }
                 )
             }
         }

@@ -40,6 +40,7 @@ data class TillUiState(
     val vatEnabled: Boolean = true,
     val vatRate: Double = AppPreferences.DEFAULT_VAT_RATE,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+    val amountTenderedText: String = "",
     val isSaving: Boolean = false,
     val completedSaleId: Long? = null,
     val error: String? = null
@@ -55,6 +56,14 @@ data class TillUiState(
             discountType = DiscountType.PERCENT,
             discountValue = 0.0
         )
+
+    /** Only meaningful for cash sales — null when the tendered field is empty or payment isn't cash. */
+    val changeDue: Double?
+        get() = if (paymentMethod == PaymentMethod.CASH) {
+            amountTenderedText.toDoubleOrNull()?.let { it - totals.total }
+        } else {
+            null
+        }
 }
 
 class TillViewModel(
@@ -148,7 +157,12 @@ class TillViewModel(
     fun onSaleNavigationHandled() = _uiState.update { it.copy(completedSaleId = null) }
 
     fun onVatEnabledChange(enabled: Boolean) = _uiState.update { it.copy(vatEnabled = enabled) }
-    fun onPaymentMethodChange(method: PaymentMethod) = _uiState.update { it.copy(paymentMethod = method) }
+
+    fun onPaymentMethodChange(method: PaymentMethod) = _uiState.update {
+        it.copy(paymentMethod = method, amountTenderedText = if (method == PaymentMethod.CASH) it.amountTenderedText else "")
+    }
+
+    fun onAmountTenderedChange(value: String) = _uiState.update { it.copy(amountTenderedText = value) }
     fun dismissError() = _uiState.update { it.copy(error = null) }
 
     fun completeSale() {

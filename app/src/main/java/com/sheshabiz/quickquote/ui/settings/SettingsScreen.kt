@@ -41,11 +41,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.BuildConfig
 import com.sheshabiz.quickquote.R
+import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.domain.Country
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
+import com.sheshabiz.quickquote.ui.lock.PinConfirmDialog
 import com.sheshabiz.quickquote.ui.theme.AppThemeMode
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -55,6 +57,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    preferences: AppPreferences,
     onEditBusinessProfile: () -> Unit,
     onSetupPin: () -> Unit,
     onBack: (() -> Unit)? = null
@@ -63,8 +66,21 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var importUriAwaitingPin by remember { mutableStateOf<android.net.Uri?>(null) }
     var showDisableLockConfirm by remember { mutableStateOf(false) }
     var showCountryPicker by remember { mutableStateOf(false) }
+
+    suspend fun runImport(uri: android.net.Uri) {
+        val text = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull()
+        val ok = text != null && viewModel.importData(text)
+        Toast.makeText(
+            context,
+            if (ok) "Data imported" else "Import failed — check the file",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
     val biometricAvailable = remember {
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
             BiometricManager.BIOMETRIC_SUCCESS
@@ -383,24 +399,29 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     val uri = pendingImportUri
                     pendingImportUri = null
-                    if (uri != null) {
-                        scope.launch {
-                            val text = runCatching {
-                                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                            }.getOrNull()
-                            val ok = text != null && viewModel.importData(text)
-                            Toast.makeText(
-                                context,
-                                if (ok) "Data imported" else "Import failed — check the file",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
+                    importUriAwaitingPin = uri
                 }) { Text("Import", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { pendingImportUri = null }) { Text(stringResource(R.string.cancel)) }
             }
+        )
+    }
+
+    if (importUriAwaitingPin != null) {
+        PinConfirmDialog(
+            preferences = preferences,
+            title = "Confirm import",
+            message = "This will overwrite existing data. Enter your PIN to continue.",
+            onConfirmed = {
+                val uri = importUriAwaitingPin
+                importUriAwaitingPin = null
+                if (uri != null) {
+                    scope.launch { runImport(uri) }
+                }
+            },
+            onDismiss = { importUriAwaitingPin = null },
+            onNeedsSetup = onSetupPin
         )
     }
 }
