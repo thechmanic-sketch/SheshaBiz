@@ -23,7 +23,9 @@ data class SettingsUiState(
     val vatRate: String = AppPreferences.DEFAULT_VAT_RATE.toString(),
     val paymentTerms: String = AppPreferences.DEFAULT_PAYMENT_TERMS,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    val overdueRemindersEnabled: Boolean = false
+    val overdueRemindersEnabled: Boolean = false,
+    val appLockEnabled: Boolean = false,
+    val biometricEnabled: Boolean = false
 )
 
 class SettingsViewModel(
@@ -45,8 +47,11 @@ class SettingsViewModel(
         preferences.overdueRemindersEnabled,
         combine(quotePrefix, invoicePrefix, vatEnabledDefault, vatRate, paymentTerms) { qp, ip, v, r, t ->
             listOf(qp, ip, v, r, t)
+        },
+        combine(preferences.appLockEnabled, preferences.biometricEnabled) { lockEnabled, bioEnabled ->
+            lockEnabled to bioEnabled
         }
-    ) { profile, theme, remindersEnabled, fields ->
+    ) { profile, theme, remindersEnabled, fields, lockState ->
         @Suppress("UNCHECKED_CAST")
         SettingsUiState(
             businessProfile = profile,
@@ -56,7 +61,9 @@ class SettingsViewModel(
             vatRate = fields[3] as String,
             paymentTerms = fields[4] as String,
             themeMode = theme,
-            overdueRemindersEnabled = remindersEnabled
+            overdueRemindersEnabled = remindersEnabled,
+            appLockEnabled = lockState.first,
+            biometricEnabled = lockState.second
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -64,6 +71,10 @@ class SettingsViewModel(
         preferences.setOverdueRemindersEnabled(enabled)
         if (enabled) reminderScheduler.start() else reminderScheduler.stop()
     }
+
+    fun onDisableAppLock() = preferences.disableAppLock()
+
+    fun onBiometricChange(enabled: Boolean) = preferences.setBiometricEnabled(enabled)
 
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()

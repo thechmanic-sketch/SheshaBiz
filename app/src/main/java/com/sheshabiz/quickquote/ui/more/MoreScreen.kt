@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.People
@@ -34,6 +35,7 @@ fun MoreScreen(
     onOpenCustomers: () -> Unit,
     onOpenProducts: () -> Unit,
     onOpenSalesHistory: () -> Unit,
+    onOpenReports: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -46,6 +48,8 @@ fun MoreScreen(
             MoreRow(icon = Icons.Filled.Inventory2, title = "Products", onClick = onOpenProducts)
             Spacer(Modifier.height(10.dp))
             MoreRow(icon = Icons.Filled.Receipt, title = "Sales history", onClick = onOpenSalesHistory)
+            Spacer(Modifier.height(10.dp))
+            MoreRow(icon = Icons.Filled.Assessment, title = "Reports", onClick = onOpenReports)
             Spacer(Modifier.height(10.dp))
             MoreRow(icon = Icons.Filled.Settings, title = "Settings", onClick = onOpenSettings)
         }

@@ -14,6 +14,9 @@ object Routes {
     const val PRODUCTS = "products"
     const val MORE = "more"
     const val SALES_HISTORY = "sales_history"
+    const val REPORTS = "reports"
+    const val APP_LOCK = "app_lock"
+    const val PIN_SETUP = "pin_setup"
 
     const val CREATE_QUOTE = "quote_edit"
     const val QUOTE_ARG = "quoteId"

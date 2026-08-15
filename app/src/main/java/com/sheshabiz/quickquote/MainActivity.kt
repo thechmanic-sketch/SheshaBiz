@@ -1,7 +1,6 @@
 package com.sheshabiz.quickquote
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -12,10 +11,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import com.sheshabiz.quickquote.ui.navigation.QuickQuoteNavHost
 import com.sheshabiz.quickquote.ui.theme.QuickQuoteTheme
 
-class MainActivity : ComponentActivity() {
+/** Extends FragmentActivity (not just ComponentActivity) because androidx.biometric.BiometricPrompt
+ * requires one for the app-lock biometric unlock flow. */
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)

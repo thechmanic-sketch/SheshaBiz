@@ -27,6 +27,42 @@ class AppPreferences(context: Context) {
     private val _overdueRemindersEnabled = MutableStateFlow(prefs.getBoolean(KEY_OVERDUE_REMINDERS_ENABLED, false))
     val overdueRemindersEnabled: StateFlow<Boolean> = _overdueRemindersEnabled
 
+    private val _appLockEnabled = MutableStateFlow(prefs.getBoolean(KEY_APP_LOCK_ENABLED, false))
+    val appLockEnabled: StateFlow<Boolean> = _appLockEnabled
+
+    private val _biometricEnabled = MutableStateFlow(prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false))
+    val biometricEnabled: StateFlow<Boolean> = _biometricEnabled
+
+    /** Sets a new PIN and turns app lock on. The PIN itself is never stored, only its hash. */
+    fun setPin(pin: String) {
+        prefs.edit()
+            .putString(KEY_PIN_HASH, PinHasher.hash(pin))
+            .putBoolean(KEY_APP_LOCK_ENABLED, true)
+            .apply()
+        _appLockEnabled.value = true
+    }
+
+    fun verifyPin(pin: String): Boolean {
+        val stored = prefs.getString(KEY_PIN_HASH, null) ?: return false
+        return stored == PinHasher.hash(pin)
+    }
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
+        _biometricEnabled.value = enabled
+    }
+
+    /** Turns app lock off entirely and forgets the PIN — re-enabling requires setting a new one. */
+    fun disableAppLock() {
+        prefs.edit()
+            .putBoolean(KEY_APP_LOCK_ENABLED, false)
+            .putBoolean(KEY_BIOMETRIC_ENABLED, false)
+            .remove(KEY_PIN_HASH)
+            .apply()
+        _appLockEnabled.value = false
+        _biometricEnabled.value = false
+    }
+
     fun setOverdueRemindersEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_OVERDUE_REMINDERS_ENABLED, enabled).apply()
         _overdueRemindersEnabled.value = enabled
@@ -127,6 +163,9 @@ class AppPreferences(context: Context) {
         private const val KEY_VAT_RATE = "vat_rate"
         private const val KEY_PAYMENT_TERMS = "payment_terms"
         private const val KEY_OVERDUE_REMINDERS_ENABLED = "overdue_reminders_enabled"
+        private const val KEY_APP_LOCK_ENABLED = "app_lock_enabled"
+        private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_PIN_HASH = "pin_hash"
         const val DEFAULT_PREFIX = "Q"
         const val DEFAULT_INVOICE_PREFIX = "INV"
         const val DEFAULT_SALE_PREFIX = "R"

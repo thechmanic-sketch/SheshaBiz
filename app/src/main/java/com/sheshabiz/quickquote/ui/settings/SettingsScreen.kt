@@ -3,6 +3,7 @@ package com.sheshabiz.quickquote.ui.settings
 import android.Manifest
 import android.os.Build
 import android.widget.Toast
+import androidx.biometric.BiometricManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -54,12 +55,18 @@ import java.util.Locale
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onEditBusinessProfile: () -> Unit,
+    onSetupPin: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showDisableLockConfirm by remember { mutableStateOf(false) }
+    val biometricAvailable = remember {
+        BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -200,6 +207,51 @@ fun SettingsScreen(
         }
         Spacer(Modifier.height(20.dp))
 
+        SectionLabel("Security")
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("App lock (PIN)", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Require a 4-digit PIN to open SheshaBiz.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = state.appLockEnabled,
+                    onCheckedChange = { enabled -> if (enabled) onSetupPin() else showDisableLockConfirm = true }
+                )
+            }
+            if (state.appLockEnabled && biometricAvailable) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Fingerprint / face unlock", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Use your device biometric instead of typing the PIN.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(checked = state.biometricEnabled, onCheckedChange = viewModel::onBiometricChange)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+
         SectionLabel(stringResource(R.string.settings_currency))
         SettingsCard {
             SettingsRow(title = "ZAR (R)", subtitle = "South African Rand", onClick = null)
@@ -254,6 +306,23 @@ fun SettingsScreen(
         }
         Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (showDisableLockConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDisableLockConfirm = false },
+            title = { Text("Turn off app lock?") },
+            text = { Text("SheshaBiz will open without a PIN. You can turn it back on any time.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDisableLockConfirm = false
+                    viewModel.onDisableAppLock()
+                }) { Text("Turn off", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDisableLockConfirm = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
 
     if (pendingImportUri != null) {

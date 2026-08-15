@@ -62,6 +62,8 @@ import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewScreen
 import com.sheshabiz.quickquote.ui.invoice.preview.InvoicePreviewViewModel
 import com.sheshabiz.quickquote.ui.invoices.InvoicesListScreen
 import com.sheshabiz.quickquote.ui.invoices.InvoicesListViewModel
+import com.sheshabiz.quickquote.ui.lock.AppLockScreen
+import com.sheshabiz.quickquote.ui.lock.PinSetupScreen
 import com.sheshabiz.quickquote.ui.more.MoreScreen
 import com.sheshabiz.quickquote.ui.onboarding.OnboardingScreen
 import com.sheshabiz.quickquote.ui.pos.ReceiptPreviewScreen
@@ -80,6 +82,8 @@ import com.sheshabiz.quickquote.ui.quote.preview.QuotePreviewScreen
 import com.sheshabiz.quickquote.ui.quote.preview.QuotePreviewViewModel
 import com.sheshabiz.quickquote.ui.quotes.QuotesListScreen
 import com.sheshabiz.quickquote.ui.quotes.QuotesListViewModel
+import com.sheshabiz.quickquote.ui.reports.ReportsScreen
+import com.sheshabiz.quickquote.ui.reports.ReportsViewModel
 import com.sheshabiz.quickquote.ui.settings.SettingsScreen
 import com.sheshabiz.quickquote.ui.settings.SettingsViewModel
 import com.sheshabiz.quickquote.ui.splash.SplashScreen
@@ -136,6 +140,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             !container.preferences.onboardingComplete.value -> Routes.ONBOARDING
                             !container.preferences.businessSetupComplete.value -> Routes.BUSINESS_SETUP
                             container.businessRepository.getProfile() == null -> Routes.BUSINESS_SETUP
+                            container.preferences.appLockEnabled.value -> Routes.APP_LOCK
                             else -> Routes.DASHBOARD
                         }
                         navController.navigate(target) {
@@ -143,6 +148,25 @@ fun QuickQuoteNavHost(container: AppContainer) {
                         }
                     }
                 })
+            }
+
+            composable(Routes.APP_LOCK) {
+                AppLockScreen(
+                    preferences = container.preferences,
+                    onUnlocked = {
+                        navController.navigate(Routes.DASHBOARD) {
+                            popUpTo(Routes.APP_LOCK) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Routes.PIN_SETUP) {
+                PinSetupScreen(
+                    preferences = container.preferences,
+                    onDone = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable(Routes.ONBOARDING) {
@@ -301,6 +325,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 SettingsScreen(
                     viewModel = vm,
                     onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) },
+                    onSetupPin = { navController.navigate(Routes.PIN_SETUP) },
                     onBack = { navController.popBackStack() }
                 )
             }
@@ -310,7 +335,20 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
                     onOpenProducts = { navController.navigate(Routes.PRODUCTS) },
                     onOpenSalesHistory = { navController.navigate(Routes.SALES_HISTORY) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+                )
+            }
+
+            composable(Routes.REPORTS) {
+                val vm = viewModel<ReportsViewModel>(
+                    factory = viewModelFactory {
+                        ReportsViewModel(container.saleRepository, container.quoteRepository, container.invoiceRepository)
+                    }
+                )
+                ReportsScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() }
                 )
             }
 
