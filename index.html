@@ -242,6 +242,49 @@
   .ledger-row h3 { font-size: 1.3rem; margin: 12px 0 8px; }
   .ledger-row p { color: var(--ink-soft); margin: 0; max-width: 60ch; }
 
+  /* screens gallery */
+  .screens-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .screen-card { text-align: center; }
+  .screen-card .frame {
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    background: var(--surface);
+  }
+  .screen-card .frame img { width: 100%; }
+  .screen-card .cap { margin-top: 14px; font-weight: 600; font-size: 0.95rem; }
+  .screen-card .cap-sub { font-size: 0.82rem; color: var(--ink-faint); margin-top: 2px; }
+  .screens-note {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    margin-top: 28px;
+  }
+
+  /* owners strip */
+  .owners-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .owner-card {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .owner-card img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .owner-card .ocap { padding: 16px 18px 18px; }
+  .owner-card .otitle { font-weight: 700; font-size: 0.98rem; }
+  .owner-card .odesc { font-size: 0.84rem; color: var(--ink-soft); margin-top: 4px; }
+
   /* how it works */
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; counter-reset: step; }
   .step { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px 22px; }
@@ -325,6 +368,8 @@
     .ledger-row { grid-template-columns: 1fr; gap: 10px; }
     .steps { grid-template-columns: 1fr; }
     .strip { grid-template-columns: repeat(2, 1fr); }
+    .screens-row { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
+    .owners-row { grid-template-columns: 1fr; }
     .cta { grid-template-columns: 1fr; padding: 36px 24px; }
   }
 </style>
@@ -430,6 +475,34 @@
     </div>
   </section>
 
+  <section id="screens">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span class="dot"></span>Inside the app</span>
+        <h2>Built to look like a real till, not a spreadsheet.</h2>
+        <p>The dashboard, the point-of-sale till, and the receipt your customer walks away with.</p>
+      </div>
+      <div class="screens-row">
+        <div class="screen-card">
+          <div class="frame"><img src="assets/screen-dashboard.png" alt="SheshaBiz dashboard showing total quoted, quick actions, and recent quotes" /></div>
+          <div class="cap">Dashboard</div>
+          <div class="cap-sub">Your day, at a glance</div>
+        </div>
+        <div class="screen-card">
+          <div class="frame"><img src="assets/screen-till.png" alt="SheshaBiz point-of-sale till with product grid and cart total" /></div>
+          <div class="cap">Point of Sale</div>
+          <div class="cap-sub">Ring up a sale in seconds</div>
+        </div>
+        <div class="screen-card">
+          <div class="frame"><img src="assets/screen-receipt.png" alt="SheshaBiz receipt with VAT breakdown and total" /></div>
+          <div class="cap">Receipt</div>
+          <div class="cap-sub">Print it or share it instantly</div>
+        </div>
+      </div>
+      <p class="screens-note">Screens shown are renderings built from the app's real colours, layout, and copy — not device photos.</p>
+    </div>
+  </section>
+
   <section>
     <div class="wrap">
       <div class="section-head">
@@ -451,6 +524,39 @@
           <div class="num">STEP 3</div>
           <h3>Get paid</h3>
           <p>Track who's paid and who's overdue, or ring the sale up directly through the till and print a receipt on the spot.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="owners">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow"><span class="dot"></span>Who it's for</span>
+        <h2>Whatever you sell, however you sell it.</h2>
+        <p>From a bottle store till to a bakery counter to a one-person studio — SheshaBiz fits the way small SA businesses actually take payment.</p>
+      </div>
+      <div class="owners-row">
+        <div class="owner-card">
+          <img src="assets/owner-bottlestore.jpg" alt="A bottle store owner ringing up a sale on a point-of-sale till" />
+          <div class="ocap">
+            <div class="otitle">Retail &amp; till sales</div>
+            <div class="odesc">Ring up walk-in customers with the POS till and print or share a receipt on the spot.</div>
+          </div>
+        </div>
+        <div class="owner-card">
+          <img src="assets/owner-pottery.jpg" alt="A potter preparing a piece for a custom order" />
+          <div class="ocap">
+            <div class="otitle">Custom &amp; service work</div>
+            <div class="odesc">Quote a custom job with line items and photos, then convert it to an invoice once it's accepted.</div>
+          </div>
+        </div>
+        <div class="owner-card">
+          <img src="assets/owner-bakery.jpg" alt="A bakery owner taking stock notes at the counter" />
+          <div class="ocap">
+            <div class="otitle">Orders &amp; stock</div>
+            <div class="odesc">Keep a product catalogue with stock levels and low-stock warnings, right alongside your sales.</div>
+          </div>
         </div>
       </div>
     </div>
