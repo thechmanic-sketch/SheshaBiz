@@ -4,375 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SheshaBiz — Quotes, Invoices &amp; POS for SA Small Business</title>
-<meta name="description" content="SheshaBiz turns a quote into a paid invoice in under a minute — VAT-ready quotations, invoices, and point-of-sale built for South African small businesses. Free Android download." />
+<meta name="description" content="SheshaBiz turns a quote into a paid invoice in under a minute — VAT-ready quotations, invoices, and point-of-sale built for South African small businesses. From R1 a day, 7 days free." />
 <link rel="icon" href="assets/logo-mark.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    --ink: #14171a;
-    --ink-soft: #4b5049;
-    --ink-faint: #7a8177;
-    --paper: #f5f7f1;
-    --surface: #ffffff;
-    --brand: #0ba84a;
-    --brand-deep: #04642b;
-    --brand-tint: #e3f5e9;
-    --line: #e2e7db;
-    --shadow: 0 1px 2px rgba(20, 23, 26, 0.04), 0 12px 32px -16px rgba(20, 23, 26, 0.18);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --ink: #edf2e9;
-      --ink-soft: #b6bfb0;
-      --ink-faint: #7d8778;
-      --paper: #0e1410;
-      --surface: #161d18;
-      --brand: #22c55e;
-      --brand-deep: #7fe3a4;
-      --brand-tint: #16301f;
-      --line: #26302a;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(0, 0, 0, 0.6);
-    }
-  }
-  :root[data-theme="dark"] {
-    --ink: #edf2e9;
-    --ink-soft: #b6bfb0;
-    --ink-faint: #7d8778;
-    --paper: #0e1410;
-    --surface: #161d18;
-    --brand: #22c55e;
-    --brand-deep: #7fe3a4;
-    --brand-tint: #16301f;
-    --line: #26302a;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(0, 0, 0, 0.6);
-  }
-
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    line-height: 1.5;
-  }
-  h1, h2, h3 {
-    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
-    font-weight: 700;
-    text-wrap: balance;
-    margin: 0;
-    color: var(--ink);
-  }
-  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-  a { color: inherit; }
-  img { max-width: 100%; display: block; }
-  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
-
-  .wrap {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* ---------- Nav ---------- */
-  header.nav {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: color-mix(in srgb, var(--paper) 88%, transparent);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
-  }
-  .nav-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 0;
-  }
-  .brand-lockup { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-  .brand-lockup img { width: 30px; height: 30px; }
-  .brand-lockup span { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 1.2rem; }
-  .brand-lockup span b { color: var(--brand-deep); }
-  .nav-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--ink);
-    color: var(--paper);
-    padding: 9px 18px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.92rem;
-    white-space: nowrap;
-  }
-
-  /* ---------- Hero ---------- */
-  .hero {
-    padding: 76px 0 64px;
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: 56px;
-    align-items: center;
-  }
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--brand-deep);
-    background: var(--brand-tint);
-    border-radius: 999px;
-    padding: 6px 14px 6px 10px;
-    margin-bottom: 22px;
-  }
-  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand); }
-  .hero h1 {
-    font-size: clamp(2.4rem, 4.2vw, 3.4rem);
-    line-height: 1.06;
-    letter-spacing: -0.01em;
-  }
-  .hero h1 em { font-style: normal; color: var(--brand-deep); }
-  .hero p.lede {
-    margin: 22px 0 0;
-    max-width: 46ch;
-    font-size: 1.1rem;
-    color: var(--ink-soft);
-  }
-  .hero-actions { display: flex; align-items: center; gap: 18px; margin-top: 32px; flex-wrap: wrap; }
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--brand);
-    color: #ffffff;
-    padding: 14px 24px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    box-shadow: var(--shadow);
-  }
-  .hero-meta { font-size: 0.85rem; color: var(--ink-faint); }
-  .hero-meta strong { color: var(--ink-soft); }
-
-  /* ---------- Receipt mockup ---------- */
-  .receipt-stage { position: relative; display: flex; justify-content: center; }
-  .receipt {
-    width: 100%;
-    max-width: 340px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    box-shadow: var(--shadow);
-    padding: 26px 24px 22px;
-    transform: rotate(-2.5deg);
-  }
-  .receipt-head { display: flex; align-items: center; gap: 10px; }
-  .receipt-head img { width: 26px; height: 26px; }
-  .receipt-head .biz { font-weight: 700; font-size: 0.95rem; }
-  .receipt-head .sub { font-size: 0.72rem; color: var(--ink-faint); }
-  .receipt hr { border: none; border-top: 1px dashed var(--line); margin: 16px 0; }
-  .receipt-title { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand-deep); font-weight: 700; margin-bottom: 4px; }
-  .receipt-num { font-size: 0.82rem; color: var(--ink-faint); margin-bottom: 14px; }
-  .receipt-line { display: flex; justify-content: space-between; gap: 12px; font-size: 0.82rem; padding: 5px 0; }
-  .receipt-line .desc { color: var(--ink-soft); }
-  .receipt-line .amt { font-weight: 600; }
-  .receipt-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 14px;
-    background: var(--brand);
-    color: #fff;
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-weight: 700;
-  }
-  .receipt-total .lbl { font-size: 0.72rem; letter-spacing: 0.06em; opacity: 0.85; }
-  .receipt-badge {
-    position: absolute;
-    top: -14px;
-    right: 6%;
-    background: var(--ink);
-    color: var(--paper);
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: 999px;
-    box-shadow: var(--shadow);
-    transform: rotate(3deg);
-  }
-
-  /* ---------- Sections ---------- */
-  section { padding: 64px 0; }
-  .section-head { max-width: 56ch; margin-bottom: 40px; }
-  .section-head .eyebrow { margin-bottom: 14px; }
-  .section-head h2 { font-size: clamp(1.7rem, 2.6vw, 2.2rem); }
-  .section-head p { color: var(--ink-soft); margin-top: 12px; font-size: 1.02rem; }
-
-  /* feature grid — styled like ledger entries */
-  .ledger { border-top: 1px solid var(--line); }
-  .ledger-row {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 28px;
-    padding: 30px 0;
-    border-bottom: 1px solid var(--line);
-    align-items: start;
-  }
-  .ledger-row .tag {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.78rem;
-    color: var(--brand-deep);
-    background: var(--brand-tint);
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 6px;
-    width: fit-content;
-  }
-  .ledger-row h3 { font-size: 1.3rem; margin: 12px 0 8px; }
-  .ledger-row p { color: var(--ink-soft); margin: 0; max-width: 60ch; }
-
-  /* screens gallery */
-  .screens-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
-    align-items: start;
-  }
-  .screen-card { text-align: center; }
-  .screen-card .frame {
-    border-radius: 22px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow);
-    background: var(--surface);
-  }
-  .screen-card .frame img { width: 100%; }
-  .screen-card .cap { margin-top: 14px; font-weight: 600; font-size: 0.95rem; }
-  .screen-card .cap-sub { font-size: 0.82rem; color: var(--ink-faint); margin-top: 2px; }
-  .screens-note {
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--ink-faint);
-    margin-top: 28px;
-  }
-
-  /* owners strip */
-  .owners-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-  .owner-card {
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    box-shadow: var(--shadow);
-  }
-  .owner-card img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
-  .owner-card .ocap { padding: 16px 18px 18px; }
-  .owner-card .otitle { font-weight: 700; font-size: 0.98rem; }
-  .owner-card .odesc { font-size: 0.84rem; color: var(--ink-soft); margin-top: 4px; }
-
-  /* how it works */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; counter-reset: step; }
-  .step { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px 22px; }
-  .step .num { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; color: var(--brand); font-weight: 600; }
-  .step h3 { font-size: 1.1rem; margin: 10px 0 8px; }
-  .step p { color: var(--ink-soft); font-size: 0.94rem; margin: 0; }
-
-  /* trust strip */
-  .strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .strip .cell { background: var(--surface); padding: 22px 20px; }
-  .strip .cell .k { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.3rem; color: var(--brand-deep); }
-  .strip .cell .l { font-size: 0.82rem; color: var(--ink-faint); margin-top: 4px; }
-
-  /* download cta */
-  .cta {
-    background: var(--ink);
-    color: var(--paper);
-    border-radius: 24px;
-    padding: 52px 44px;
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 32px;
-    align-items: center;
-  }
-  .cta h2 { color: var(--paper); font-size: clamp(1.6rem, 2.6vw, 2.1rem); }
-  .cta p { color: color-mix(in srgb, var(--paper) 72%, transparent); margin-top: 12px; max-width: 44ch; }
-  .cta-actions { display: flex; flex-direction: column; gap: 12px; }
-  .btn-light {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: var(--brand);
-    color: #fff;
-    padding: 15px 22px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-  }
-  .btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border: 1px solid color-mix(in srgb, var(--paper) 30%, transparent);
-    color: var(--paper);
-    padding: 14px 22px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-    opacity: 0.85;
-  }
-  .cta-note { font-size: 0.78rem; color: color-mix(in srgb, var(--paper) 55%, transparent); }
-
-  footer {
-    border-top: 1px solid var(--line);
-    padding: 32px 0 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    color: var(--ink-faint);
-    font-size: 0.85rem;
-  }
-  footer .flockup { display: flex; align-items: center; gap: 8px; }
-  footer .flockup img { width: 18px; height: 18px; }
-
-  @media (max-width: 860px) {
-    .hero { grid-template-columns: 1fr; padding-top: 40px; }
-    .receipt-stage { order: -1; }
-    .receipt { transform: rotate(-1.5deg); max-width: 300px; }
-    .ledger-row { grid-template-columns: 1fr; gap: 10px; }
-    .steps { grid-template-columns: 1fr; }
-    .strip { grid-template-columns: repeat(2, 1fr); }
-    .screens-row { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
-    .owners-row { grid-template-columns: 1fr; }
-    .cta { grid-template-columns: 1fr; padding: 36px 24px; }
-  }
-</style>
+<link rel="stylesheet" href="assets/site.css" />
 </head>
 <body>
 
@@ -382,67 +19,63 @@
       <img src="assets/logo-mark.png" alt="" />
       <span>Shesha<b>Biz</b></span>
     </a>
-    <a class="nav-cta" href="#download">Download for Android</a>
+    <nav class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">Company</a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-cta" href="#download">Download for Android</a>
+    </div>
   </div>
 </header>
 
 <main id="top">
   <div class="wrap hero">
     <div>
-      <span class="eyebrow"><span class="dot"></span>Built for South African small business</span>
+      <span class="eyebrow"><span class="dot pulse"></span>Built for South African small business</span>
       <h1>Quote in a minute. <em>Get paid</em> without the paperwork.</h1>
       <p class="lede">SheshaBiz turns a quotation into a VAT-ready invoice, a completed sale, and a printable receipt — all from one app, made for how SA plumbers, spaza shops, and consultants actually work.</p>
+      <a class="price-line" href="pricing.html">
+        <span class="big mono">R1/day</span>
+        <span class="sml">from R30/month · 7 days free<span class="arrow">→</span></span>
+      </a>
       <div class="hero-actions">
-        <a class="btn-primary" href="#download">
-          Download the app
-        </a>
-        <span class="hero-meta">Free · Android · <strong>iOS coming soon</strong></span>
+        <a class="btn-primary" href="#download">Download the app</a>
+        <span class="hero-meta">Android · <strong>iOS coming soon</strong></span>
       </div>
     </div>
-    <div class="receipt-stage">
-      <span class="receipt-badge">Sent via WhatsApp in 40s</span>
-      <div class="receipt">
-        <div class="receipt-head">
-          <img src="assets/logo-mark.png" alt="" />
-          <div>
-            <div class="biz">Ndlovu Plumbing Services</div>
-            <div class="sub">082 555 0142 · Durban</div>
-          </div>
-        </div>
-        <hr />
-        <div class="receipt-title">Quotation</div>
-        <div class="receipt-num mono">Q-0114 · Valid 7 days</div>
-        <div class="receipt-line"><span class="desc">Geyser replacement — labour</span><span class="amt mono">R 850.00</span></div>
-        <div class="receipt-line"><span class="desc">150L geyser unit</span><span class="amt mono">R 2,400.00</span></div>
-        <div class="receipt-line"><span class="desc">Call-out fee</span><span class="amt mono">R 350.00</span></div>
-        <div class="receipt-line"><span class="desc">VAT (15%)</span><span class="amt mono">R 540.00</span></div>
-        <div class="receipt-total">
-          <span class="lbl">TOTAL</span>
-          <span class="mono">R 4,140.00</span>
+    <div class="phone-stage">
+      <span class="hero-badge">Sent via WhatsApp in 40s</span>
+      <div class="phone-frame">
+        <div class="phone-screen" data-phone-slider>
+          <div class="slide is-active" data-caption="Your day, at a glance"><img src="assets/screen-dashboard.png" alt="SheshaBiz dashboard" /></div>
+          <div class="slide" data-caption="Ring up a sale in seconds"><img src="assets/screen-till.png" alt="SheshaBiz point-of-sale till" /></div>
+          <div class="slide" data-caption="Print it or share it instantly"><img src="assets/screen-receipt.png" alt="SheshaBiz receipt" /></div>
         </div>
       </div>
+      <div class="phone-dots" data-phone-dots></div>
+      <div class="phone-caption" data-phone-caption></div>
     </div>
   </div>
 
   <section>
-    <div class="wrap">
-      <div class="strip">
-        <div class="cell"><div class="k mono">R0</div><div class="l">Monthly fee — the app is free</div></div>
-        <div class="cell"><div class="k mono">15%</div><div class="l">VAT calculated automatically</div></div>
-        <div class="cell"><div class="k mono">1 tap</div><div class="l">Quote → Invoice conversion</div></div>
-        <div class="cell"><div class="k mono">On-device</div><div class="l">Your data never leaves the phone</div></div>
-      </div>
+    <div class="wrap reveal-stagger strip">
+      <div class="cell"><div class="k mono">R1/day</div><div class="l">From R30/month, billed monthly</div></div>
+      <div class="cell"><div class="k mono">7 days</div><div class="l">Free trial, no commitment</div></div>
+      <div class="cell"><div class="k mono">15%</div><div class="l">VAT calculated automatically</div></div>
+      <div class="cell"><div class="k mono">1 tap</div><div class="l">Quote → Invoice conversion</div></div>
     </div>
   </section>
 
   <section id="features">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow"><span class="dot"></span>Everything on the counter, in one app</span>
         <h2>From the first quote to the till.</h2>
         <p>SheshaBiz covers the paperwork every small business needs — no accounting course required.</p>
       </div>
-      <div class="ledger">
+      <div class="ledger reveal">
         <div class="ledger-row">
           <div><span class="tag">01 · Quotes &amp; Invoices</span></div>
           <div>
@@ -477,12 +110,12 @@
 
   <section id="screens">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow"><span class="dot"></span>Inside the app</span>
         <h2>Built to look like a real till, not a spreadsheet.</h2>
         <p>The dashboard, the point-of-sale till, and the receipt your customer walks away with.</p>
       </div>
-      <div class="screens-row">
+      <div class="screens-row reveal-stagger">
         <div class="screen-card">
           <div class="frame"><img src="assets/screen-dashboard.png" alt="SheshaBiz dashboard showing total quoted, quick actions, and recent quotes" /></div>
           <div class="cap">Dashboard</div>
@@ -503,13 +136,36 @@
     </div>
   </section>
 
+  <section id="devices">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow"><span class="dot"></span>Everywhere your business goes</span>
+        <h2>Built for the phone. Growing to every screen.</h2>
+        <p>SheshaBiz is a native Android app today. A tablet layout and a browser-based web app are next on the roadmap.</p>
+      </div>
+      <div class="devices-row reveal-stagger">
+        <div class="device-card">
+          <div class="tablet-frame"><img src="assets/screen-tablet.png" alt="SheshaBiz dashboard concept on a tablet" /></div>
+          <div class="cap">Tablet</div>
+          <span class="status soon">In progress</span>
+        </div>
+        <div class="device-card">
+          <div class="laptop-frame"><img src="assets/screen-laptop.png" alt="SheshaBiz dashboard concept in a desktop browser" /></div>
+          <div class="cap">Web app</div>
+          <span class="status soon">Coming soon</span>
+        </div>
+      </div>
+      <p class="screens-note">Tablet and web concepts shown are early design previews, not finished products.</p>
+    </div>
+  </section>
+
   <section>
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow"><span class="dot"></span>How it works</span>
         <h2>Three steps, one app.</h2>
       </div>
-      <div class="steps">
+      <div class="steps reveal-stagger">
         <div class="step">
           <div class="num">STEP 1</div>
           <h3>Quote</h3>
@@ -531,12 +187,12 @@
 
   <section id="owners">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <span class="eyebrow"><span class="dot"></span>Who it's for</span>
         <h2>Whatever you sell, however you sell it.</h2>
         <p>From a bottle store till to a bakery counter to a one-person studio — SheshaBiz fits the way small SA businesses actually take payment.</p>
       </div>
-      <div class="owners-row">
+      <div class="owners-row reveal-stagger">
         <div class="owner-card">
           <img src="assets/owner-bottlestore.jpg" alt="A bottle store owner ringing up a sale on a point-of-sale till" />
           <div class="ocap">
@@ -564,15 +220,15 @@
 
   <section id="download">
     <div class="wrap">
-      <div class="cta">
+      <div class="cta reveal">
         <div>
           <h2>Put it on your phone today.</h2>
-          <p>SheshaBiz is a free, direct download for Android — no Play Store account needed, no subscription. Install the APK and start your first quote in minutes.</p>
+          <p>SheshaBiz starts at R1 a day (R30/month) with a 7-day free trial — install the APK and start your first quote in minutes.</p>
           <p class="cta-note">iOS is on the roadmap as an installable web app.</p>
         </div>
         <div class="cta-actions">
           <a class="btn-light" href="https://github.com/thechmanic-sketch/SheshaBiz/releases/latest">Download latest release</a>
-          <a class="btn-ghost" href="https://github.com/thechmanic-sketch/SheshaBiz">View on GitHub</a>
+          <a class="btn-ghost" href="pricing.html">See pricing</a>
         </div>
       </div>
     </div>
@@ -580,11 +236,21 @@
 </main>
 
 <footer>
-  <div class="wrap flockup" style="width: 100%; justify-content: space-between;">
-    <span class="flockup"><img src="assets/logo-mark.png" alt="" /> SheshaBiz</span>
-    <span>Made for South African small business.</span>
+  <div class="wrap">
+    <div class="footer-row">
+      <span class="flockup"><img src="assets/logo-mark.png" alt="" /> SheshaBiz</span>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="about.html">Company</a>
+        <a href="https://github.com/thechmanic-sketch/SheshaBiz">GitHub</a>
+      </div>
+      <span>Made for South African small business.</span>
+    </div>
+    <p class="footer-credit">A product of <a href="about.html">Techmanic Software and Digital Solutions</a>.</p>
   </div>
 </footer>
 
+<script src="assets/site.js"></script>
 </body>
 </html>
