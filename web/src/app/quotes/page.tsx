@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import { quoteTotals, type QuoteStatus } from "@/lib/types";
 
 type StatusFilter = QuoteStatus | "all";
@@ -22,14 +23,15 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function QuotesPage() {
-  const { data } = useAppData();
+  const { data, visibleQuotes } = useAppData();
+  const { guard } = useTrialGate();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.quotes.filter((quote) => {
+    return visibleQuotes.filter((quote) => {
       if (status !== "all" && quote.status !== status) return false;
       if (!q) return true;
       return (
@@ -38,19 +40,20 @@ export default function QuotesPage() {
         quote.description.toLowerCase().includes(q)
       );
     });
-  }, [data.quotes, search, status]);
+  }, [visibleQuotes, search, status]);
 
   return (
     <div className="mx-auto max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Quotes</h1>
-        <Link
-          href="/quotes/new"
+        <button
+          type="button"
+          onClick={() => guard(() => router.push("/quotes/new"))}
           className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"
         >
           <Plus size={16} />
           New Quote
-        </Link>
+        </button>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
@@ -94,7 +97,7 @@ export default function QuotesPage() {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
-                  {data.quotes.length === 0 ? "No quotes yet." : "No quotes match your search."}
+                  {visibleQuotes.length === 0 ? "No quotes yet." : "No quotes match your search."}
                 </td>
               </tr>
             )}

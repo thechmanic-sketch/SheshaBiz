@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus, Minus, Trash2, History, Package } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import type { LineItem, PaymentMethod } from "@/lib/types";
 import { lineItemsTotal } from "@/lib/types";
 
@@ -16,7 +17,8 @@ const paymentMethods: { value: PaymentMethod; label: string }[] = [
 ];
 
 export default function PosPage() {
-  const { data, addSale } = useAppData();
+  const { data, visibleProducts, addSale } = useAppData();
+  const { guard } = useTrialGate();
   const router = useRouter();
   const [cart, setCart] = useState<LineItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
@@ -33,7 +35,7 @@ export default function PosPage() {
   const canComplete = cart.length > 0 && (paymentMethod !== "cash" || (changeDue !== null && changeDue >= 0));
 
   function addProduct(productId: string) {
-    const product = data.products.find((p) => p.id === productId);
+    const product = visibleProducts.find((p) => p.id === productId);
     if (!product) return;
     setCart((c) => {
       const existing = c.find((item) => item.description === product.name);
@@ -64,18 +66,20 @@ export default function PosPage() {
       return;
     }
     setError(null);
-    const sale = addSale({
-      lineItems: cart,
-      paymentMethod,
-      amountTendered: paymentMethod === "cash" && tendered !== "" ? tenderedAmount : null,
-      changeGiven: paymentMethod === "cash" && changeDue !== null ? Math.max(0, changeDue) : null,
+    guard(() => {
+      const sale = addSale({
+        lineItems: cart,
+        paymentMethod,
+        amountTendered: paymentMethod === "cash" && tendered !== "" ? tenderedAmount : null,
+        changeGiven: paymentMethod === "cash" && changeDue !== null ? Math.max(0, changeDue) : null,
+      });
+      setCart([]);
+      setTendered("");
+      router.push(`/pos/receipt?id=${sale.id}`);
     });
-    setCart([]);
-    setTendered("");
-    router.push(`/pos/receipt?id=${sale.id}`);
   }
 
-  const availableProducts = useMemo(() => data.products, [data.products]);
+  const availableProducts = useMemo(() => visibleProducts, [visibleProducts]);
 
   return (
     <div className="mx-auto max-w-5xl">

@@ -14,22 +14,25 @@ export const seedBusiness: BusinessProfile = {
   invoicePrefix: "INV",
   receiptPrefix: "R",
   deletePinHash: null,
+  updatedAt: "2026-08-15T00:00:00.000Z",
 };
 
+const seedTimestamp = "2026-08-15T00:00:00.000Z";
+
 export const seedCustomers: Customer[] = [
-  { id: "cust-1", name: "Nomvula Dlamini", phone: "071 234 5678", email: "nomvula@example.com", address: "12 Bloem St, Pretoria" },
-  { id: "cust-2", name: "Themba Nkosi", phone: "082 345 6789", email: "themba@example.com", address: "45 Church St, Polokwane" },
-  { id: "cust-3", name: "Lindiwe Zulu", phone: "083 456 7890", email: "lindiwe@example.com", address: "8 Market Rd, Durban" },
-  { id: "cust-4", name: "Kagiso Molefe", phone: "084 567 8901", email: "kagiso@example.com", address: "3 Voortrekker Ave, Bloemfontein" },
-  { id: "cust-5", name: "Sizwe Khumalo", phone: "072 678 9012", email: "sizwe@example.com", address: "19 Kerk St, Nelspruit" },
+  { id: "cust-1", name: "Nomvula Dlamini", phone: "071 234 5678", email: "nomvula@example.com", address: "12 Bloem St, Pretoria", updatedAt: seedTimestamp, deletedAt: null },
+  { id: "cust-2", name: "Themba Nkosi", phone: "082 345 6789", email: "themba@example.com", address: "45 Church St, Polokwane", updatedAt: seedTimestamp, deletedAt: null },
+  { id: "cust-3", name: "Lindiwe Zulu", phone: "083 456 7890", email: "lindiwe@example.com", address: "8 Market Rd, Durban", updatedAt: seedTimestamp, deletedAt: null },
+  { id: "cust-4", name: "Kagiso Molefe", phone: "084 567 8901", email: "kagiso@example.com", address: "3 Voortrekker Ave, Bloemfontein", updatedAt: seedTimestamp, deletedAt: null },
+  { id: "cust-5", name: "Sizwe Khumalo", phone: "072 678 9012", email: "sizwe@example.com", address: "19 Kerk St, Nelspruit", updatedAt: seedTimestamp, deletedAt: null },
 ];
 
 export const seedProducts: Product[] = [
-  { id: "prod-1", name: "Callout fee", price: 350, stockQty: 999, imageDataUrl: null },
-  { id: "prod-2", name: "Tap replacement", price: 450, stockQty: 20, imageDataUrl: null },
-  { id: "prod-3", name: "Geyser element", price: 620, stockQty: 8, imageDataUrl: null },
-  { id: "prod-4", name: "PVC pipe (per meter)", price: 65, stockQty: 120, imageDataUrl: null },
-  { id: "prod-5", name: "Labour (per hour)", price: 380, stockQty: 999, imageDataUrl: null },
+  { id: "prod-1", name: "Callout fee", price: 350, stockQty: 999, imageDataUrl: null, updatedAt: seedTimestamp, deletedAt: null },
+  { id: "prod-2", name: "Tap replacement", price: 450, stockQty: 20, imageDataUrl: null, updatedAt: seedTimestamp, deletedAt: null },
+  { id: "prod-3", name: "Geyser element", price: 620, stockQty: 8, imageDataUrl: null, updatedAt: seedTimestamp, deletedAt: null },
+  { id: "prod-4", name: "PVC pipe (per meter)", price: 65, stockQty: 120, imageDataUrl: null, updatedAt: seedTimestamp, deletedAt: null },
+  { id: "prod-5", name: "Labour (per hour)", price: 380, stockQty: 999, imageDataUrl: null, updatedAt: seedTimestamp, deletedAt: null },
 ];
 
 export const seedQuotes: Quote[] = [
@@ -47,6 +50,8 @@ export const seedQuotes: Quote[] = [
     status: "accepted",
     createdAt: "2026-08-14",
     convertedToInvoiceId: "inv-18",
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
   {
     id: "q-41",
@@ -61,6 +66,8 @@ export const seedQuotes: Quote[] = [
     status: "sent",
     createdAt: "2026-08-13",
     convertedToInvoiceId: null,
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
   {
     id: "q-40",
@@ -75,6 +82,8 @@ export const seedQuotes: Quote[] = [
     status: "accepted",
     createdAt: "2026-08-11",
     convertedToInvoiceId: null,
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
   {
     id: "q-39",
@@ -89,6 +98,8 @@ export const seedQuotes: Quote[] = [
     status: "draft",
     createdAt: "2026-08-10",
     convertedToInvoiceId: null,
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
 ];
 
@@ -107,6 +118,8 @@ export const seedInvoices: Invoice[] = [
     createdAt: "2026-08-14",
     dueDate: "2026-08-10",
     fromQuoteId: "q-42",
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
   {
     id: "inv-17",
@@ -121,6 +134,8 @@ export const seedInvoices: Invoice[] = [
     createdAt: "2026-08-13",
     dueDate: "2026-08-20",
     fromQuoteId: null,
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
   {
     id: "inv-16",
@@ -132,6 +147,8 @@ export const seedInvoices: Invoice[] = [
     createdAt: "2026-08-01",
     dueDate: "2026-08-05",
     fromQuoteId: null,
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
 ];
 
@@ -147,6 +164,8 @@ export const seedSales: Sale[] = [
     amountTendered: 900,
     changeGiven: 100,
     createdAt: "2026-08-15",
+    updatedAt: seedTimestamp,
+    deletedAt: null,
   },
 ];
 

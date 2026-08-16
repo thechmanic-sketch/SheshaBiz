@@ -9,9 +9,13 @@ const inputCls =
   "w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-sm outline-none focus:border-brand";
 
 let counter = 0;
+/** A real UUID, not just a locally-unique string: quote_items/invoice_items
+ * /sale_items has a `uuid` primary key, and the sync engine pushes each
+ * line item's local id verbatim (see `web/src/lib/sync.ts`). */
 function newLineId(): string {
   counter += 1;
-  return `new-${Date.now()}-${counter}`;
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `id-${Date.now()}-${counter}`;
 }
 
 export function emptyLineItem(): LineItem {

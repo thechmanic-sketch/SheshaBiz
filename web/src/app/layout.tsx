@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
 import { AppDataProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
+import { TrialGateProvider } from "@/lib/trial";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full bg-paper text-ink">
         <AuthProvider>
           <AppDataProvider>
-            <AppShell>{children}</AppShell>
+            <TrialGateProvider>
+              <AppShell>{children}</AppShell>
+            </TrialGateProvider>
           </AppDataProvider>
         </AuthProvider>
       </body>

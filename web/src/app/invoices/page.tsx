@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import { effectiveInvoiceStatus, quoteTotals, type InvoiceStatus } from "@/lib/types";
 import { useToday } from "@/lib/useToday";
 
@@ -23,7 +24,8 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function InvoicesPage() {
-  const { data } = useAppData();
+  const { data, visibleInvoices } = useAppData();
+  const { guard } = useTrialGate();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -31,26 +33,27 @@ export default function InvoicesPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.invoices.filter((invoice) => {
+    return visibleInvoices.filter((invoice) => {
       if (status !== "all" && effectiveInvoiceStatus(invoice, today) !== status) return false;
       if (!q) return true;
       return (
         invoice.number.toLowerCase().includes(q) || invoice.customerName.toLowerCase().includes(q)
       );
     });
-  }, [data.invoices, search, status, today]);
+  }, [visibleInvoices, search, status, today]);
 
   return (
     <div className="mx-auto max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Invoices</h1>
-        <Link
-          href="/invoices/new"
+        <button
+          type="button"
+          onClick={() => guard(() => router.push("/invoices/new"))}
           className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"
         >
           <Plus size={16} />
           New Invoice
-        </Link>
+        </button>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
@@ -94,7 +97,7 @@ export default function InvoicesPage() {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
-                  {data.invoices.length === 0 ? "No invoices yet." : "No invoices match your search."}
+                  {visibleInvoices.length === 0 ? "No invoices yet." : "No invoices match your search."}
                 </td>
               </tr>
             )}

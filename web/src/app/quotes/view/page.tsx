@@ -8,6 +8,7 @@ import { QuoteBadge } from "@/components/ui/Badge";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import { quoteTotals } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { shareText } from "@/lib/share";
@@ -48,6 +49,7 @@ function QuoteViewInner() {
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const { data, updateQuote, deleteQuote, convertQuoteToInvoice } = useAppData();
+  const { guard } = useTrialGate();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const quote = data.quotes.find((q) => q.id === id);
@@ -94,30 +96,38 @@ function QuoteViewInner() {
           <QuoteBadge status={quote.status} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <ActionButton onClick={() => router.push(`/quotes/edit?id=${quote.id}`)} icon={Pencil} label="Edit" />
+          <ActionButton
+            onClick={() => guard(() => router.push(`/quotes/edit?id=${quote.id}`))}
+            icon={Pencil}
+            label="Edit"
+          />
           {quote.status === "draft" && (
-            <ActionButton onClick={() => updateQuote(quote.id, { status: "sent" })} icon={Send} label="Mark sent" />
+            <ActionButton
+              onClick={() => guard(() => updateQuote(quote.id, { status: "sent" }))}
+              icon={Send}
+              label="Mark sent"
+            />
           )}
           {quote.status === "sent" && (
             <>
               <ActionButton
-                onClick={() => updateQuote(quote.id, { status: "accepted" })}
+                onClick={() => guard(() => updateQuote(quote.id, { status: "accepted" }))}
                 icon={CheckCircle2}
                 label="Mark accepted"
               />
               <ActionButton
-                onClick={() => updateQuote(quote.id, { status: "rejected" })}
+                onClick={() => guard(() => updateQuote(quote.id, { status: "rejected" }))}
                 icon={XCircle}
                 label="Mark rejected"
               />
             </>
           )}
           {quote.status === "accepted" && !quote.convertedToInvoiceId && (
-            <ActionButton onClick={handleConvert} icon={ArrowRightLeft} label="Convert to invoice" primary />
+            <ActionButton onClick={() => guard(handleConvert)} icon={ArrowRightLeft} label="Convert to invoice" primary />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
           <ActionButton onClick={handleShare} icon={Share2} label="Share" />
-          <ActionButton onClick={() => setConfirmDelete(true)} icon={Trash2} label="Delete" danger />
+          <ActionButton onClick={() => guard(() => setConfirmDelete(true))} icon={Trash2} label="Delete" danger />
         </div>
       </div>
 

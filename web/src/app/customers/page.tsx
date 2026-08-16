@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import type { Customer } from "@/lib/types";
 
 const inputCls =
@@ -13,7 +14,8 @@ const inputCls =
 const labelCls = "text-xs font-semibold text-ink-faint";
 
 export default function CustomersPage() {
-  const { data, addCustomer, updateCustomer, deleteCustomer } = useAppData();
+  const { visibleCustomers, addCustomer, updateCustomer, deleteCustomer } = useAppData();
+  const { guard } = useTrialGate();
   const [modalCustomer, setModalCustomer] = useState<Customer | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
   const [name, setName] = useState("");
@@ -24,14 +26,14 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return data.customers;
-    return data.customers.filter(
+    if (!q) return visibleCustomers;
+    return visibleCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q)
     );
-  }, [data.customers, search]);
+  }, [visibleCustomers, search]);
 
   function openNew() {
     setName("");
@@ -52,12 +54,14 @@ export default function CustomersPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const values = { name: name.trim(), phone: phone.trim(), email: email.trim(), address: address.trim() };
-    if (modalCustomer === "new") {
-      addCustomer(values);
-    } else if (modalCustomer) {
-      updateCustomer(modalCustomer.id, values);
-    }
-    setModalCustomer(null);
+    guard(() => {
+      if (modalCustomer === "new") {
+        addCustomer(values);
+      } else if (modalCustomer) {
+        updateCustomer(modalCustomer.id, values);
+      }
+      setModalCustomer(null);
+    });
   }
 
   return (
@@ -66,7 +70,7 @@ export default function CustomersPage() {
         <h1 className="text-xl font-bold">Customers</h1>
         <button
           type="button"
-          onClick={openNew}
+          onClick={() => guard(openNew)}
           className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"
         >
           <Plus size={16} />
@@ -98,14 +102,14 @@ export default function CustomersPage() {
             <div className="flex gap-1.5">
               <button
                 type="button"
-                onClick={() => openEdit(customer)}
+                onClick={() => guard(() => openEdit(customer))}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
               >
                 <Pencil size={14} />
               </button>
               <button
                 type="button"
-                onClick={() => setDeleteTarget(customer)}
+                onClick={() => guard(() => setDeleteTarget(customer))}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint hover:bg-error/10 hover:text-error"
               >
                 <Trash2 size={14} />
@@ -116,7 +120,7 @@ export default function CustomersPage() {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface py-16 text-center text-ink-faint">
             <Users size={22} />
-            {data.customers.length === 0 ? "No customers yet." : "No customers match your search."}
+            {visibleCustomers.length === 0 ? "No customers yet." : "No customers match your search."}
           </div>
         )}
       </div>

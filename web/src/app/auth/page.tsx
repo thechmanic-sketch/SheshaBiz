@@ -63,7 +63,7 @@ export default function AuthPage() {
         </h1>
         <p className="mt-1 text-sm text-ink-soft">
           {step === "email"
-            ? "Create an account to secure future access to SheshaBiz. Your data stays on this device."
+            ? "Create an account to sync your data across devices. New accounts get a 7-day free trial."
             : `Enter the 6-digit code we sent to ${email}.`}
         </p>
 

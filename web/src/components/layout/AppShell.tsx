@@ -17,10 +17,24 @@ import {
   Bell,
   Menu,
   X,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { useAppData } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useSyncEngine } from "@/lib/sync";
+import { TRIAL_LOCK_MESSAGE } from "@/lib/trial";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import type { ComponentType } from "react";
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const TRIAL_DAYS = 7;
+const SOON_THRESHOLD_DAYS = 2;
+
+function daysRemaining(trialStartedAt: string): number {
+  const end = new Date(trialStartedAt).getTime() + TRIAL_DAYS * MS_PER_DAY;
+  return (end - Date.now()) / MS_PER_DAY;
+}
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -60,6 +74,11 @@ const navItems: NavItem[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data, loaded } = useAppData();
+  const { isLoggedIn, subscriptionState, trialStartedAt, bootstrapBusiness, refreshStatus } = useAuth();
+  // Mounted unconditionally (before the `!loaded`/`!onboarded` early
+  // returns below) so its hook order never changes between renders. It
+  // no-ops internally whenever `isLoggedIn` is false.
+  useSyncEngine({ isLoggedIn, bootstrapBusiness, refreshStatus });
   // Time-of-day greeting is computed after mount only: it depends on the
   // viewer's clock, which never matches the build machine's clock, so
   // rendering it during SSR would cause a hydration mismatch.
@@ -69,6 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setGreetingText(greeting());
   }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trialBannerDismissed, setTrialBannerDismissed] = useState(false);
 
   if (!loaded) {
     // Briefly shown while the localStorage load effect resolves. Its
@@ -82,6 +102,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!data.onboarded) {
     return <OnboardingWizard />;
   }
+
+  const trialDaysLeft = isLoggedIn && trialStartedAt ? daysRemaining(trialStartedAt) : null;
+  const showSoonBanner =
+    isLoggedIn &&
+    subscriptionState === "trialing" &&
+    trialDaysLeft !== null &&
+    trialDaysLeft > 0 &&
+    trialDaysLeft < SOON_THRESHOLD_DAYS &&
+    !trialBannerDismissed;
+  const showLapsedBanner = isLoggedIn && subscriptionState === "lapsed";
 
   return (
     <div className="flex min-h-screen">
@@ -115,6 +145,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex flex-1 flex-col min-w-0">
+        {showLapsedBanner && (
+          <div className="flex items-center gap-2.5 bg-error px-4 py-2.5 text-sm font-medium text-white no-print sm:px-6">
+            <AlertTriangle size={16} className="shrink-0" />
+            <span>{TRIAL_LOCK_MESSAGE}</span>
+          </div>
+        )}
+        {!showLapsedBanner && showSoonBanner && trialDaysLeft !== null && (
+          <div className="flex items-center justify-between gap-2.5 bg-brand-tint px-4 py-2.5 text-sm font-medium text-brand-deep no-print sm:px-6">
+            <span className="flex items-center gap-2.5">
+              <Clock size={16} className="shrink-0" />
+              Your trial ends in {trialDaysLeft < 1 ? "less than a day" : `${Math.ceil(trialDaysLeft)} day${Math.ceil(trialDaysLeft) === 1 ? "" : "s"}`}
+              . WhatsApp or call 063 353 1662 to activate SheshaBiz.
+            </span>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setTrialBannerDismissed(true)}
+              className="shrink-0 rounded-full p-1 hover:bg-black/[.06]"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-4 sm:px-6 no-print">
           <div className="flex items-center gap-2">
             <button

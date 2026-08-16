@@ -1,23 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, FileText, Receipt, ShoppingCart } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { QuoteBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import { effectiveInvoiceStatus, quoteTotals } from "@/lib/types";
 import { useToday } from "@/lib/useToday";
 
 const heroActions = [
-  { href: "/quotes/new", label: "New Quote", icon: Receipt },
-  { href: "/invoices/new", label: "New Invoice", icon: FileText },
-  { href: "/pos", label: "New Sale", icon: ShoppingCart },
+  { href: "/quotes/new", label: "New Quote", icon: Receipt, gated: true },
+  { href: "/invoices/new", label: "New Invoice", icon: FileText, gated: true },
+  { href: "/pos", label: "New Sale", icon: ShoppingCart, gated: false },
 ];
 
 export default function DashboardPage() {
-  const { data } = useAppData();
-  const { business, quotes, invoices } = data;
+  const { data, visibleQuotes, visibleInvoices } = useAppData();
+  const { guard } = useTrialGate();
+  const router = useRouter();
+  const { business } = data;
+  const quotes = visibleQuotes;
+  const invoices = visibleInvoices;
   const today = useToday();
 
   const totalQuoted = quotes.reduce(
@@ -44,16 +50,17 @@ export default function DashboardPage() {
           {heroActions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link
+              <button
                 key={action.label}
-                href={action.href}
+                type="button"
+                onClick={() => (action.gated ? guard(() => router.push(action.href)) : router.push(action.href))}
                 className="flex flex-col items-center gap-1.5 text-xs font-medium"
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
                   <Icon size={20} />
                 </span>
                 {action.label}
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -99,9 +106,13 @@ export default function DashboardPage() {
         {recentQuotes.length === 0 && (
           <p className="rounded-2xl border border-line bg-surface p-4 text-sm text-ink-faint">
             No quotes yet.{" "}
-            <Link href="/quotes/new" className="font-semibold text-brand-deep">
+            <button
+              type="button"
+              onClick={() => guard(() => router.push("/quotes/new"))}
+              className="font-semibold text-brand-deep"
+            >
               Create your first quote
-            </Link>
+            </button>
             .
           </p>
         )}

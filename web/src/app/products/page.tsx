@@ -8,6 +8,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { formatCurrency } from "@/lib/currency";
 import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import type { Product } from "@/lib/types";
 
 const inputCls =
@@ -90,7 +91,8 @@ function ProductFormFields({
 }
 
 export default function ProductsPage() {
-  const { data, addProduct, updateProduct, deleteProduct } = useAppData();
+  const { data, visibleProducts, addProduct, updateProduct, deleteProduct } = useAppData();
+  const { guard } = useTrialGate();
   const [modalProduct, setModalProduct] = useState<Product | "new" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [name, setName] = useState("");
@@ -101,9 +103,9 @@ export default function ProductsPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return data.products;
-    return data.products.filter((p) => p.name.toLowerCase().includes(q));
-  }, [data.products, search]);
+    if (!q) return visibleProducts;
+    return visibleProducts.filter((p) => p.name.toLowerCase().includes(q));
+  }, [visibleProducts, search]);
 
   function openNew() {
     setName("");
@@ -129,12 +131,14 @@ export default function ProductsPage() {
       stockQty: Number(stockQty) || 0,
       imageDataUrl,
     };
-    if (modalProduct === "new") {
-      addProduct(values);
-    } else if (modalProduct) {
-      updateProduct(modalProduct.id, values);
-    }
-    setModalProduct(null);
+    guard(() => {
+      if (modalProduct === "new") {
+        addProduct(values);
+      } else if (modalProduct) {
+        updateProduct(modalProduct.id, values);
+      }
+      setModalProduct(null);
+    });
   }
 
   return (
@@ -143,7 +147,7 @@ export default function ProductsPage() {
         <h1 className="text-xl font-bold">Products</h1>
         <button
           type="button"
-          onClick={openNew}
+          onClick={() => guard(openNew)}
           className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"
         >
           <Plus size={16} />
@@ -174,7 +178,7 @@ export default function ProductsPage() {
             <div className="mt-3 flex gap-1.5">
               <button
                 type="button"
-                onClick={() => openEdit(product)}
+                onClick={() => guard(() => openEdit(product))}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-line py-1.5 text-xs font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
               >
                 <Pencil size={13} />
@@ -182,7 +186,7 @@ export default function ProductsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setDeleteTarget(product)}
+                onClick={() => guard(() => setDeleteTarget(product))}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint hover:bg-error/10 hover:text-error"
               >
                 <Trash2 size={14} />
@@ -192,7 +196,7 @@ export default function ProductsPage() {
         ))}
         {filtered.length === 0 && (
           <p className="col-span-full py-10 text-center text-ink-faint">
-            {data.products.length === 0 ? "No products yet." : "No products match your search."}
+            {visibleProducts.length === 0 ? "No products yet." : "No products match your search."}
           </p>
         )}
       </div>

@@ -10,7 +10,7 @@ import { lineItemsTotal } from "@/lib/types";
 const methodLabel = { cash: "Cash", card: "Card", eft: "EFT" } as const;
 
 export default function SalesHistoryPage() {
-  const { data } = useAppData();
+  const { data, visibleSales } = useAppData();
   const router = useRouter();
 
   return (
@@ -37,7 +37,7 @@ export default function SalesHistoryPage() {
             </tr>
           </thead>
           <tbody>
-            {data.sales.map((sale) => (
+            {visibleSales.map((sale) => (
               <tr
                 key={sale.id}
                 onClick={() => router.push(`/pos/receipt?id=${sale.id}`)}
@@ -52,7 +52,7 @@ export default function SalesHistoryPage() {
                 </td>
               </tr>
             ))}
-            {data.sales.length === 0 && (
+            {visibleSales.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
                   No sales yet.

@@ -27,7 +27,7 @@ export function QuoteForm({
   onSave: (values: QuoteFormValues) => void;
   submitLabel?: string;
 }) {
-  const { data } = useAppData();
+  const { data, visibleCustomers, visibleProducts } = useAppData();
   const [customerId, setCustomerId] = useState<string | null>(initial?.customerId ?? null);
   const [customerName, setCustomerName] = useState(initial?.customerName ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -44,7 +44,7 @@ export function QuoteForm({
       setCustomerId(null);
       return;
     }
-    const customer = data.customers.find((c) => c.id === id);
+    const customer = visibleCustomers.find((c) => c.id === id);
     if (customer) {
       setCustomerId(customer.id);
       setCustomerName(customer.name);
@@ -78,7 +78,7 @@ export function QuoteForm({
               onChange={(e) => handleCustomerSelect(e.target.value)}
             >
               <option value="">— Type a new name —</option>
-              {data.customers.map((c) => (
+              {visibleCustomers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -127,7 +127,7 @@ export function QuoteForm({
 
       <div className="mt-5">
         <h2 className="mb-2 text-sm font-bold">Line items</h2>
-        <LineItemsEditor items={lineItems} onChange={setLineItems} products={data.products} />
+        <LineItemsEditor items={lineItems} onChange={setLineItems} products={visibleProducts} />
       </div>
 
       <div className="mt-5 ml-auto max-w-xs rounded-2xl border border-line bg-surface p-4 text-sm">

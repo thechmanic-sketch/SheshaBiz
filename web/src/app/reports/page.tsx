@@ -40,7 +40,7 @@ function StatRow({ label, value, warn }: { label: string; value: string; warn?: 
 }
 
 export default function ReportsPage() {
-  const { data } = useAppData();
+  const { data, visibleQuotes, visibleInvoices, visibleSales } = useAppData();
   const [period, setPeriod] = useState<Period>("month");
   const today = useToday();
 
@@ -48,9 +48,9 @@ export default function ReportsPage() {
     const cutoff = cutoffFor(period);
     const inRange = (dateStr: string) => (cutoff ? new Date(dateStr) >= cutoff : true);
 
-    const quotes = data.quotes.filter((q) => inRange(q.createdAt));
-    const invoices = data.invoices.filter((i) => inRange(i.createdAt));
-    const sales = data.sales.filter((s) => inRange(s.createdAt));
+    const quotes = visibleQuotes.filter((q) => inRange(q.createdAt));
+    const invoices = visibleInvoices.filter((i) => inRange(i.createdAt));
+    const sales = visibleSales.filter((s) => inRange(s.createdAt));
 
     const quotesTotal = quotes.reduce((sum, q) => sum + quoteTotals(q, data.business.vatRate).total, 0);
     const quotesAccepted = quotes.filter((q) => q.status === "accepted").length;
@@ -73,7 +73,7 @@ export default function ReportsPage() {
       salesTotal,
       salesCount: sales.length,
     };
-  }, [data, period, today]);
+  }, [data, visibleQuotes, visibleInvoices, visibleSales, period, today]);
 
   const country = data.business.country;
 

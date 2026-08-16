@@ -48,6 +48,7 @@ export interface BusinessProfile {
   invoicePrefix: string;
   receiptPrefix: string;
   deletePinHash: string | null;
+  updatedAt: string;
 }
 
 export interface Customer {
@@ -56,6 +57,8 @@ export interface Customer {
   phone: string;
   email: string;
   address: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Product {
@@ -64,6 +67,8 @@ export interface Product {
   price: number;
   stockQty: number;
   imageDataUrl: string | null;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface LineItem {
@@ -87,6 +92,8 @@ export interface Quote {
   status: QuoteStatus;
   createdAt: string;
   convertedToInvoiceId: string | null;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Invoice {
@@ -99,6 +106,8 @@ export interface Invoice {
   createdAt: string;
   dueDate: string;
   fromQuoteId: string | null;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Sale {
@@ -109,6 +118,8 @@ export interface Sale {
   amountTendered: number | null;
   changeGiven: number | null;
   createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 /**

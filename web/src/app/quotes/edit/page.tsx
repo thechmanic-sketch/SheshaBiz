@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { QuoteForm, type QuoteFormValues } from "@/components/quotes/QuoteForm";
 import { useAppData } from "@/lib/store";
+import { TRIAL_LOCK_MESSAGE, useTrialGate } from "@/lib/trial";
 
 function EditQuoteInner() {
   const router = useRouter();
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const { data, updateQuote } = useAppData();
+  const { locked } = useTrialGate();
   const quote = data.quotes.find((q) => q.id === id);
 
   if (!quote) {
@@ -19,6 +21,17 @@ function EditQuoteInner() {
         <p className="text-ink-faint">Quote not found.</p>
         <Link href="/quotes" className="mt-3 inline-block font-semibold text-brand-deep">
           Back to Quotes
+        </Link>
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <p className="text-ink-soft">{TRIAL_LOCK_MESSAGE}</p>
+        <Link href={`/quotes/view?id=${quote.id}`} className="mt-3 inline-block font-semibold text-brand-deep">
+          Back to {quote.number}
         </Link>
       </div>
     );

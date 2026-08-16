@@ -8,6 +8,7 @@ import { InvoiceBadge } from "@/components/ui/Badge";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
+import { useTrialGate } from "@/lib/trial";
 import { effectiveInvoiceStatus, quoteTotals } from "@/lib/types";
 import { useToday } from "@/lib/useToday";
 import { formatCurrency } from "@/lib/currency";
@@ -49,6 +50,7 @@ function InvoiceViewInner() {
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const { data, updateInvoice, deleteInvoice } = useAppData();
+  const { guard } = useTrialGate();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const today = useToday();
 
@@ -86,13 +88,13 @@ function InvoiceViewInner() {
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton
-            onClick={() => router.push(`/invoices/edit?id=${invoice.id}`)}
+            onClick={() => guard(() => router.push(`/invoices/edit?id=${invoice.id}`))}
             icon={Pencil}
             label="Edit"
           />
           {invoice.status !== "paid" && (
             <ActionButton
-              onClick={() => updateInvoice(invoice.id, { status: "paid" })}
+              onClick={() => guard(() => updateInvoice(invoice.id, { status: "paid" }))}
               icon={CheckCircle2}
               label="Mark paid"
               primary
@@ -100,14 +102,14 @@ function InvoiceViewInner() {
           )}
           {invoice.status === "paid" && (
             <ActionButton
-              onClick={() => updateInvoice(invoice.id, { status: "unpaid" })}
+              onClick={() => guard(() => updateInvoice(invoice.id, { status: "unpaid" }))}
               icon={RotateCcw}
               label="Mark unpaid"
             />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
           <ActionButton onClick={handleShare} icon={Share2} label="Share" />
-          <ActionButton onClick={() => setConfirmDelete(true)} icon={Trash2} label="Delete" danger />
+          <ActionButton onClick={() => guard(() => setConfirmDelete(true))} icon={Trash2} label="Delete" danger />
         </div>
       </div>
 

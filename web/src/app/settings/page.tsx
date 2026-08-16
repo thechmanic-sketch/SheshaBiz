@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut } from "lucide-react";
+import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut, RefreshCw } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { PinSetupModal } from "@/components/settings/PinSetupModal";
@@ -10,7 +10,26 @@ import { SupabaseStatus } from "@/components/settings/SupabaseStatus";
 import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { getLastSyncedAt } from "@/lib/sync";
 import { COUNTRIES, type Country } from "@/lib/types";
+
+const subscriptionLabel: Record<"trialing" | "active" | "lapsed", string> = {
+  trialing: "Free trial",
+  active: "Active subscription",
+  lapsed: "Trial ended",
+};
+
+function formatLastSynced(iso: string | null): string {
+  if (!iso) return "Not synced yet";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
 
 const inputCls =
   "w-full rounded-xl border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-brand";
@@ -27,13 +46,24 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export default function SettingsPage() {
   const { data, updateBusiness, exportJson, importJson, resetDemoData } = useAppData();
-  const { isLoggedIn, email, signOut } = useAuth();
+  const { isLoggedIn, email, signOut, subscriptionState, trialStartedAt, validUntil } = useAuth();
   const { business } = data;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [pinSetupOpen, setPinSetupOpen] = useState(false);
   const [confirmRemovePin, setConfirmRemovePin] = useState(false);
+  // Background sync passes (see `useSyncEngine` in AppShell) don't notify
+  // this page directly, so poll the shared localStorage watermark instead
+  // of only reading it once on mount.
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLastSyncedAt(getLastSyncedAt());
+    const interval = setInterval(() => setLastSyncedAt(getLastSyncedAt()), 4000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   function handleExport() {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -254,9 +284,8 @@ export default function SettingsPage() {
           ) : (
             <>
               <p className="text-sm text-ink-soft">
-                Create an account to secure future access to SheshaBiz — for example, if you get a
-                new phone. This doesn&apos;t sync or back up your data yet; it only lets you prove
-                it&apos;s you later.
+                Create an account to sync your data across devices and back it up to the cloud.
+                New accounts get a 7-day free trial.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
@@ -273,17 +302,51 @@ export default function SettingsPage() {
 
         <Card title="Cloud sync">
           <SupabaseStatus />
-          <p className="text-sm text-ink-soft">
-            The app is now connected to Supabase, but it isn&apos;t used for storing anything yet —
-            this only confirms the connection itself works. Your data still lives in this browser
-            only until real cloud sync is built on top of it.
-          </p>
+          {isLoggedIn ? (
+            <>
+              <div className="flex items-center gap-2 text-sm">
+                <RefreshCw size={15} className="text-ink-faint" />
+                <span className="text-ink-soft">
+                  Last synced: <span className="font-medium text-ink">{formatLastSynced(lastSyncedAt)}</span>
+                </span>
+              </div>
+              {subscriptionState && (
+                <div className="text-sm text-ink-soft">
+                  <span className="font-medium text-ink">{subscriptionLabel[subscriptionState]}</span>
+                  {subscriptionState === "trialing" && trialStartedAt && (
+                    <span>
+                      {" "}
+                      — ends{" "}
+                      {new Date(
+                        new Date(trialStartedAt).getTime() + 7 * 24 * 60 * 60 * 1000
+                      ).toLocaleDateString()}
+                    </span>
+                  )}
+                  {subscriptionState === "active" && validUntil && (
+                    <span> — valid until {new Date(validUntil).toLocaleDateString()}</span>
+                  )}
+                  {subscriptionState === "lapsed" && (
+                    <span> — WhatsApp or call 063 353 1662 to activate SheshaBiz.</span>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-ink-faint">
+                Your data syncs automatically across every device signed in to {email}.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-ink-soft">
+              Log in to sync your quotes, invoices, customers, products, and sales across devices.
+              Until then, your data stays in this browser only.
+            </p>
+          )}
         </Card>
 
         <Card title="Data">
           <p className="text-sm text-ink-soft">
-            Your data lives in this browser only, for now — export a backup to keep it safe, or move it to
-            another device. Cloud sync is coming soon.
+            {isLoggedIn
+              ? "Your data syncs to the cloud automatically. You can still export a backup at any time, or move data between devices manually."
+              : "Your data lives in this browser only, for now — export a backup to keep it safe, or move it to another device. Log in to enable automatic cloud sync."}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
