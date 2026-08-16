@@ -5,6 +5,7 @@ import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff } from "lucide-reac
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { PinSetupModal } from "@/components/settings/PinSetupModal";
+import { SupabaseStatus } from "@/components/settings/SupabaseStatus";
 import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
 import { COUNTRIES, type Country } from "@/lib/types";
@@ -228,6 +229,15 @@ export default function SettingsPage() {
             onChange={(e) => updateBusiness({ paymentTerms: e.target.value })}
           />
           <p className="text-xs text-ink-faint">Shown on the footer of quotes and invoices.</p>
+        </Card>
+
+        <Card title="Cloud sync">
+          <SupabaseStatus />
+          <p className="text-sm text-ink-soft">
+            The app is now connected to Supabase, but it isn&apos;t used for storing anything yet —
+            this only confirms the connection itself works. Your data still lives in this browser
+            only until real cloud sync is built on top of it.
+          </p>
         </Card>
 
         <Card title="Data">
