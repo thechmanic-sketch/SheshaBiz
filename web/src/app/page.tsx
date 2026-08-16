@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { FileText, Receipt, ShoppingCart } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { QuoteBadge } from "@/components/ui/Badge";
-import { dashboardStats, formatCurrency, recentQuotes } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/currency";
+import { useAppData } from "@/lib/store";
+import { quoteTotals } from "@/lib/types";
 
 const heroActions = [
   { href: "/quotes/new", label: "New Quote", icon: Receipt },
@@ -11,6 +15,18 @@ const heroActions = [
 ];
 
 export default function DashboardPage() {
+  const { data } = useAppData();
+  const { business, quotes } = data;
+
+  const totalQuoted = quotes.reduce(
+    (sum, q) => sum + quoteTotals(q, business.vatRate).total,
+    0
+  );
+  const quotesCreated = quotes.length;
+  const quotesSent = quotes.filter((q) => q.status !== "draft").length;
+  const quotesAccepted = quotes.filter((q) => q.status === "accepted").length;
+  const recentQuotes = quotes.slice(0, 4);
+
   return (
     <div className="mx-auto max-w-5xl">
       <div
@@ -19,7 +35,7 @@ export default function DashboardPage() {
       >
         <p className="text-sm text-white/85">Total quoted</p>
         <p className="mt-1.5 text-3xl font-bold tabular">
-          {formatCurrency(dashboardStats.totalQuoted)}
+          {formatCurrency(totalQuoted, business.country)}
         </p>
         <div className="mt-5 flex gap-8">
           {heroActions.map((action) => {
@@ -41,10 +57,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard value={String(dashboardStats.quotesCreated)} label="Quotes created" />
-        <StatCard value={String(dashboardStats.quotesSent)} label="Quotes sent" />
-        <StatCard value={String(dashboardStats.quotesAccepted)} label="Quotes accepted" />
-        <StatCard value={formatCurrency(dashboardStats.totalQuoted)} label="Total quoted" />
+        <StatCard value={String(quotesCreated)} label="Quotes created" />
+        <StatCard value={String(quotesSent)} label="Quotes sent" />
+        <StatCard value={String(quotesAccepted)} label="Quotes accepted" />
+        <StatCard value={formatCurrency(totalQuoted, business.country)} label="Total quoted" />
       </div>
 
       <div className="mt-8 flex items-center justify-between">
@@ -54,10 +70,20 @@ export default function DashboardPage() {
         </Link>
       </div>
       <div className="mt-3 flex flex-col gap-2.5">
+        {recentQuotes.length === 0 && (
+          <p className="rounded-2xl border border-line bg-surface p-4 text-sm text-ink-faint">
+            No quotes yet.{" "}
+            <Link href="/quotes/new" className="font-semibold text-brand-deep">
+              Create your first quote
+            </Link>
+            .
+          </p>
+        )}
         {recentQuotes.map((quote) => (
-          <div
+          <Link
             key={quote.id}
-            className="flex items-center justify-between rounded-2xl border border-line bg-surface p-4"
+            href={`/quotes/view?id=${quote.id}`}
+            className="flex items-center justify-between rounded-2xl border border-line bg-surface p-4 hover:border-brand/40"
           >
             <div>
               <p className="font-semibold">{quote.customerName}</p>
@@ -66,12 +92,14 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="font-bold tabular">{formatCurrency(quote.total)}</p>
+              <p className="font-bold tabular">
+                {formatCurrency(quoteTotals(quote, business.vatRate).total, business.country)}
+              </p>
               <div className="mt-1">
                 <QuoteBadge status={quote.status} />
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

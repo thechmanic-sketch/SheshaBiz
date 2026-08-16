@@ -1,4 +1,4 @@
-import type { InvoiceStatus, QuoteStatus } from "@/lib/mock-data";
+import type { InvoiceStatus, QuoteStatus } from "@/lib/types";
 
 const quoteStyles: Record<QuoteStatus, string> = {
   draft: "bg-black/[.06] text-ink-soft dark:bg-white/[.08]",

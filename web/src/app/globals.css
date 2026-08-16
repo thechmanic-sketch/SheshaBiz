@@ -59,3 +59,17 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .print-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+}

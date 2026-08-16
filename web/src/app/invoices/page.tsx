@@ -1,9 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { InvoiceBadge } from "@/components/ui/Badge";
-import { formatCurrency, invoices } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/currency";
+import { useAppData } from "@/lib/store";
+import { quoteTotals } from "@/lib/types";
 
 export default function InvoicesPage() {
+  const { data } = useAppData();
+  const router = useRouter();
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="flex items-center justify-between">
@@ -29,19 +37,34 @@ export default function InvoicesPage() {
             </tr>
           </thead>
           <tbody>
-            {invoices.map((invoice) => (
-              <tr key={invoice.id} className="border-b border-line last:border-0">
-                <td className="px-5 py-4 font-mono text-xs text-ink-faint">{invoice.number}</td>
+            {data.invoices.map((invoice) => (
+              <tr
+                key={invoice.id}
+                onClick={() => router.push(`/invoices/view?id=${invoice.id}`)}
+                className="cursor-pointer border-b border-line last:border-0 hover:bg-black/[.02] dark:hover:bg-white/[.03]"
+              >
+                <td className="px-5 py-4 font-mono text-xs text-ink-faint">
+                  <Link href={`/invoices/view?id=${invoice.id}`} className="hover:underline">
+                    {invoice.number}
+                  </Link>
+                </td>
                 <td className="px-5 py-4 font-semibold">{invoice.customerName}</td>
                 <td className="px-5 py-4 text-ink-soft">{invoice.dueDate}</td>
                 <td className="px-5 py-4">
                   <InvoiceBadge status={invoice.status} />
                 </td>
                 <td className="px-5 py-4 text-right font-bold tabular">
-                  {formatCurrency(invoice.total)}
+                  {formatCurrency(quoteTotals(invoice, data.business.vatRate).total, data.business.country)}
                 </td>
               </tr>
             ))}
+            {data.invoices.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
+                  No invoices yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
