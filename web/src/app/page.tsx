@@ -1,69 +1,79 @@
-import Image from "next/image";
+import Link from "next/link";
+import { FileText, Receipt, ShoppingCart } from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
+import { QuoteBadge } from "@/components/ui/Badge";
+import { dashboardStats, formatCurrency, recentQuotes } from "@/lib/mock-data";
 
-export default function Home() {
+const heroActions = [
+  { href: "/quotes/new", label: "New Quote", icon: Receipt },
+  { href: "/invoices/new", label: "New Invoice", icon: FileText },
+  { href: "/pos", label: "New Sale", icon: ShoppingCart },
+];
+
+export default function DashboardPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto max-w-5xl">
+      <div
+        className="rounded-3xl p-6 text-white"
+        style={{ background: "linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%)" }}
+      >
+        <p className="text-sm text-white/85">Total quoted</p>
+        <p className="mt-1.5 text-3xl font-bold tabular">
+          {formatCurrency(dashboardStats.totalQuoted)}
+        </p>
+        <div className="mt-5 flex gap-8">
+          {heroActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.label}
+                href={action.href}
+                className="flex flex-col items-center gap-1.5 text-xs font-medium"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
+                  <Icon size={20} />
+                </span>
+                {action.label}
+              </Link>
+            );
+          })}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard value={String(dashboardStats.quotesCreated)} label="Quotes created" />
+        <StatCard value={String(dashboardStats.quotesSent)} label="Quotes sent" />
+        <StatCard value={String(dashboardStats.quotesAccepted)} label="Quotes accepted" />
+        <StatCard value={formatCurrency(dashboardStats.totalQuoted)} label="Total quoted" />
+      </div>
+
+      <div className="mt-8 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Recent Quotes</h2>
+        <Link href="/quotes" className="text-sm font-semibold text-brand-deep">
+          See all
+        </Link>
+      </div>
+      <div className="mt-3 flex flex-col gap-2.5">
+        {recentQuotes.map((quote) => (
+          <div
+            key={quote.id}
+            className="flex items-center justify-between rounded-2xl border border-line bg-surface p-4"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <div>
+              <p className="font-semibold">{quote.customerName}</p>
+              <p className="text-sm text-ink-faint">
+                {quote.number} · {quote.description}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold tabular">{formatCurrency(quote.total)}</p>
+              <div className="mt-1">
+                <QuoteBadge status={quote.status} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
