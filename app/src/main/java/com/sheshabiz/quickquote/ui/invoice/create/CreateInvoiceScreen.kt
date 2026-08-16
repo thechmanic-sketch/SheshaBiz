@@ -49,6 +49,7 @@ import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
+import com.sheshabiz.quickquote.ui.common.TrialLockedDialog
 import com.sheshabiz.quickquote.ui.customers.CustomerPickerSheet
 import com.sheshabiz.quickquote.ui.products.ProductPickerSheet
 
@@ -263,6 +264,10 @@ fun CreateInvoiceScreen(
             onDismiss = { showProductPicker = false },
             onSelect = { viewModel.addItemFromProduct(it); showProductPicker = false }
         )
+    }
+
+    if (state.lockedMessage != null) {
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
     }
 }
 

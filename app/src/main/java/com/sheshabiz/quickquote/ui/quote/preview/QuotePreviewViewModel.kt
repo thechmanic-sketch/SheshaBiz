@@ -8,10 +8,12 @@ import com.sheshabiz.quickquote.data.db.entity.InvoiceItem
 import com.sheshabiz.quickquote.data.db.entity.InvoiceStatus
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.domain.PdfGenerator
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.domain.model.QuoteWithItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +37,7 @@ class QuotePreviewViewModel(
     private val businessRepository: BusinessRepository,
     private val invoiceRepository: InvoiceRepository,
     private val preferences: AppPreferences,
+    private val authPreferences: AuthPreferences,
     private val pdfGenerator: PdfGenerator
 ) : ViewModel() {
 
@@ -53,6 +56,10 @@ class QuotePreviewViewModel(
 
     private val _convertedInvoiceId = MutableStateFlow<Long?>(null)
     val convertedInvoiceId: StateFlow<Long?> = _convertedInvoiceId
+
+    private val _lockedMessage = MutableStateFlow<String?>(null)
+    val lockedMessage: StateFlow<String?> = _lockedMessage
+    fun clearLockedMessage() { _lockedMessage.value = null }
 
     suspend fun generatePdfFile(): File? {
         val state = uiState.value
@@ -79,6 +86,10 @@ class QuotePreviewViewModel(
     }
 
     fun duplicateQuote() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _lockedMessage.value = TrialGate.LOCKED_MESSAGE
+            return
+        }
         viewModelScope.launch {
             val current = uiState.value.data ?: return@launch
             val now = System.currentTimeMillis()
@@ -98,6 +109,10 @@ class QuotePreviewViewModel(
     }
 
     fun convertToInvoice() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _lockedMessage.value = TrialGate.LOCKED_MESSAGE
+            return
+        }
         viewModelScope.launch {
             val current = uiState.value.data ?: return@launch
             val quote = current.quote

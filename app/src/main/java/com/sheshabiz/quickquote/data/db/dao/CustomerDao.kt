@@ -10,11 +10,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CustomerDao {
-    @Query("SELECT * FROM customers ORDER BY name ASC")
+    @Query("SELECT * FROM customers WHERE deletedAt IS NULL ORDER BY name ASC")
     fun observeAll(): Flow<List<Customer>>
 
     @Query("SELECT * FROM customers WHERE id = :id")
     suspend fun getById(id: Long): Customer?
+
+    @Query("SELECT * FROM customers WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): Customer?
+
+    /** Unfiltered by [Customer.deletedAt] — used by [com.sheshabiz.quickquote.data.sync.SyncManager]
+     * so tombstoned rows still get pushed. */
+    @Query("SELECT * FROM customers")
+    suspend fun getAllForSync(): List<Customer>
 
     @Insert
     suspend fun insert(customer: Customer): Long

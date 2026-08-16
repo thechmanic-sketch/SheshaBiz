@@ -9,10 +9,12 @@ import com.sheshabiz.quickquote.data.db.entity.QuoteItem
 import com.sheshabiz.quickquote.data.db.entity.QuoteStatus
 import com.sheshabiz.quickquote.data.db.entity.Product
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.domain.LineItemInput
 import com.sheshabiz.quickquote.domain.QuoteCalculator
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.domain.Validators
 import com.sheshabiz.quickquote.domain.model.QuoteTotals
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +61,8 @@ data class CreateQuoteUiState(
     val paymentTerms: String = AppPreferences.DEFAULT_PAYMENT_TERMS,
     val isSaving: Boolean = false,
     val isLoading: Boolean = false,
-    val savedQuoteId: Long? = null
+    val savedQuoteId: Long? = null,
+    val lockedMessage: String? = null
 ) {
     val totals: QuoteTotals
         get() = QuoteCalculator.calculate(
@@ -75,6 +78,7 @@ class CreateQuoteViewModel(
     private val quoteRepository: QuoteRepository,
     private val customerRepository: CustomerRepository,
     private val preferences: AppPreferences,
+    private val authPreferences: AuthPreferences,
     existingQuoteId: Long?
 ) : ViewModel() {
 
@@ -199,7 +203,14 @@ class CreateQuoteViewModel(
     fun onNotesChange(value: String) = _uiState.update { it.copy(notes = value) }
     fun onPaymentTermsChange(value: String) = _uiState.update { it.copy(paymentTerms = value) }
 
+    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+
     fun save() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+            return
+        }
+
         val s = _uiState.value
 
         val customerNameError = if (Validators.isBlank(s.customerName)) "Customer name is required." else null

@@ -20,7 +20,12 @@ data class BusinessProfile(
     val accountHolder: String? = null,
     val accountNumber: String? = null,
     val branchCode: String? = null,
-    val accountType: String? = null
+    val accountType: String? = null,
+    /** Cross-device sync bookkeeping (added in v6). For this singleton row, [syncId] holds
+     * the business uuid itself (`business_profiles.business_id` doubles as its own key
+     * server-side) rather than a freshly generated id like the other entities. */
+    val syncId: String? = null,
+    val deletedAt: Long? = null
 ) {
     companion object {
         const val SINGLETON_ID = 1

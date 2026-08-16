@@ -19,6 +19,7 @@ import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
+import com.sheshabiz.quickquote.ui.common.TrialLockedDialog
 
 @Composable
 fun CustomerEditScreen(
@@ -87,5 +88,9 @@ fun CustomerEditScreen(
             )
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (state.lockedMessage != null) {
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
     }
 }

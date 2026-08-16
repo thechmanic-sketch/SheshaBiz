@@ -236,6 +236,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 val themeMode by container.preferences.themeMode.collectAsState()
                 DashboardScreen(
                     viewModel = vm,
+                    authPreferences = container.authPreferences,
                     onNewQuote = { navController.navigate(Routes.createQuote()) },
                     onNewInvoice = { navController.navigate(Routes.createInvoice()) },
                     onOpenTill = {
@@ -340,7 +341,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     factory = viewModelFactory {
                         AuthViewModel(
                             authClient = container.supabaseAuthClient,
-                            authPreferences = container.authPreferences
+                            authPreferences = container.authPreferences,
+                            syncManager = container.syncManager
                         )
                     }
                 )
@@ -402,6 +404,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     factory = viewModelFactory {
                         ProductEditViewModel(
                             container.productRepository,
+                            container.authPreferences,
                             productId,
                             copyImageToInternalStorage = { uri -> container.copyProductImage(uri) }
                         )
@@ -421,7 +424,12 @@ fun QuickQuoteNavHost(container: AppContainer) {
             composable(Routes.POS) {
                 val vm = viewModel<TillViewModel>(
                     factory = viewModelFactory {
-                        TillViewModel(container.productRepository, container.saleRepository, container.preferences)
+                        TillViewModel(
+                            container.productRepository,
+                            container.saleRepository,
+                            container.preferences,
+                            container.authPreferences
+                        )
                     }
                 )
                 TillScreen(
@@ -475,7 +483,13 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 val vm = viewModel<CreateQuoteViewModel>(
                     key = "create_quote_$quoteIdArg",
                     factory = viewModelFactory {
-                        CreateQuoteViewModel(container.quoteRepository, container.customerRepository, container.preferences, quoteId)
+                        CreateQuoteViewModel(
+                            container.quoteRepository,
+                            container.customerRepository,
+                            container.preferences,
+                            container.authPreferences,
+                            quoteId
+                        )
                     }
                 )
                 CreateQuoteScreen(
@@ -506,6 +520,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             businessRepository = container.businessRepository,
                             invoiceRepository = container.invoiceRepository,
                             preferences = container.preferences,
+                            authPreferences = container.authPreferences,
                             pdfGenerator = container.pdfGenerator
                         )
                     }
@@ -536,7 +551,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 val customerId = customerIdArg.takeIf { it > 0 }
                 val vm = viewModel<CustomerEditViewModel>(
                     key = "customer_edit_$customerIdArg",
-                    factory = viewModelFactory { CustomerEditViewModel(container.customerRepository, customerId) }
+                    factory = viewModelFactory { CustomerEditViewModel(container.customerRepository, container.authPreferences, customerId) }
                 )
                 CustomerEditScreen(
                     viewModel = vm,
@@ -555,7 +570,13 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 val vm = viewModel<CreateInvoiceViewModel>(
                     key = "create_invoice_$invoiceIdArg",
                     factory = viewModelFactory {
-                        CreateInvoiceViewModel(container.invoiceRepository, container.customerRepository, container.preferences, invoiceId)
+                        CreateInvoiceViewModel(
+                            container.invoiceRepository,
+                            container.customerRepository,
+                            container.preferences,
+                            container.authPreferences,
+                            invoiceId
+                        )
                     }
                 )
                 CreateInvoiceScreen(

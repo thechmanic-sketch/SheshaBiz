@@ -53,5 +53,7 @@ data class Invoice(
     val status: InvoiceStatus,
     val paidAt: Long?,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val syncId: String? = null,
+    val deletedAt: Long? = null
 )

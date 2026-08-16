@@ -20,5 +20,7 @@ data class Product(
     val lowStockThreshold: Double?,
     val imageUri: String? = null,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val syncId: String? = null,
+    val deletedAt: Long? = null
 )

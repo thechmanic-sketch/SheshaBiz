@@ -47,6 +47,7 @@ import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
+import com.sheshabiz.quickquote.ui.common.TrialLockedDialog
 import com.sheshabiz.quickquote.ui.lock.PinConfirmDialog
 
 @Composable
@@ -193,6 +194,10 @@ fun ProductEditScreen(
             onDismiss = { showPinConfirm = false },
             onNeedsSetup = onNeedsPinSetup
         )
+    }
+
+    if (state.lockedMessage != null) {
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
     }
 }
 

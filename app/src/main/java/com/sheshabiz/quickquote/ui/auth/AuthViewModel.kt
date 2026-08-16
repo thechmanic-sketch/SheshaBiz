@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.remote.SendOtpResult
 import com.sheshabiz.quickquote.data.remote.SupabaseAuthClient
+import com.sheshabiz.quickquote.data.sync.SyncManager
 import com.sheshabiz.quickquote.domain.Validators
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,13 +27,14 @@ data class AuthUiState(
 )
 
 /**
- * Drives the login-only email-OTP flow. Nothing here touches the Room database or any
- * Quote/Invoice/Customer/Product/Sale data — success only persists tokens via
- * [AuthPreferences].
+ * Drives the login-only email-OTP flow. Success persists tokens via [AuthPreferences] and
+ * fires an immediate cross-device sync pass in the background — otherwise nothing here
+ * touches the Room database or any Quote/Invoice/Customer/Product/Sale data directly.
  */
 class AuthViewModel(
     private val authClient: SupabaseAuthClient,
-    private val authPreferences: AuthPreferences
+    private val authPreferences: AuthPreferences,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -92,6 +94,11 @@ class AuthViewModel(
                 onSuccess = { session ->
                     authPreferences.saveSession(email, session)
                     _uiState.update { it.copy(isVerifying = false, loggedIn = true) }
+                    // Fire-and-forget: don't block the success UI state on network/sync —
+                    // this starts the trial clock server-side (via the idempotent
+                    // bootstrap_business RPC inside SyncManager.sync()) and pulls in
+                    // anything already on the account from another device.
+                    viewModelScope.launch { syncManager.sync() }
                 },
                 onFailure = { error ->
                     _uiState.update {

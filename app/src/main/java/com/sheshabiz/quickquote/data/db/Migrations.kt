@@ -147,3 +147,37 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE `sales` ADD COLUMN `changeGiven` REAL")
     }
 }
+
+/**
+ * v5 -> v6: cross-device sync bookkeeping. Adds `syncId` (this row's stable remote uuid,
+ * assigned lazily on first push) and `deletedAt` (a soft-delete tombstone timestamp, epoch
+ * millis) to every synced table, plus a partial unique index on `syncId` so a Supabase
+ * `Prefer: resolution=merge-duplicates` upsert can key off it. `customers` also gains
+ * `updatedAt` — the only synced entity that both (a) can be edited after creation and
+ * (b) had no existing modification clock for last-write-wins conflict resolution; it
+ * defaults to 0 so pre-existing rows simply lose every last-write-wins tie until their
+ * first real edit or sync pull.
+ *
+ * Purely additive (`ADD COLUMN` + `CREATE INDEX`, same shape as every migration above) —
+ * no table is dropped or recreated, so no existing quotes/invoices/customers/products/sales
+ * are touched. See commit c5d1cb6 ("Fix: stop destroying user data on every schema-version
+ * update") for the destructive-fallback bug this deliberately avoids repeating.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        val syncedTables = listOf(
+            "business_profile", "customers", "products",
+            "quotes", "invoices", "sales",
+            "quote_items", "invoice_items", "sale_items"
+        )
+        for (table in syncedTables) {
+            db.execSQL("ALTER TABLE `$table` ADD COLUMN `syncId` TEXT")
+            db.execSQL("ALTER TABLE `$table` ADD COLUMN `deletedAt` INTEGER")
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_${table}_syncId` " +
+                    "ON `$table` (`syncId`) WHERE `syncId` IS NOT NULL"
+            )
+        }
+        db.execSQL("ALTER TABLE `customers` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+    }
+}

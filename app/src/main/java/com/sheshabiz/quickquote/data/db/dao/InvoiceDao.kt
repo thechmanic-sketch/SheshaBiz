@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InvoiceDao {
-    @Query("SELECT * FROM invoices ORDER BY createdAt DESC")
+    @Query("SELECT * FROM invoices WHERE deletedAt IS NULL ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<Invoice>>
 
     @Query("SELECT * FROM invoices WHERE id = :id")
@@ -19,6 +19,14 @@ interface InvoiceDao {
 
     @Query("SELECT * FROM invoices WHERE id = :id")
     suspend fun getById(id: Long): Invoice?
+
+    @Query("SELECT * FROM invoices WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): Invoice?
+
+    /** Unfiltered by [Invoice.deletedAt] — used by [com.sheshabiz.quickquote.data.sync.SyncManager]
+     * so tombstoned rows still get pushed. */
+    @Query("SELECT * FROM invoices")
+    suspend fun getAllForSync(): List<Invoice>
 
     @Insert
     suspend fun insert(invoice: Invoice): Long

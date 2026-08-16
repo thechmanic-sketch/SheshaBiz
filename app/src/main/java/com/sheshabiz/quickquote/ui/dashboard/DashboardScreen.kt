@@ -15,16 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +40,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.R
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
+import com.sheshabiz.quickquote.data.prefs.SubscriptionState
 import com.sheshabiz.quickquote.domain.CurrencyFormat
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.ui.common.EmptyState
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QuoteRowItem
@@ -44,10 +51,12 @@ import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
 import com.sheshabiz.quickquote.ui.theme.BrandGradientEnd
 import com.sheshabiz.quickquote.ui.theme.BrandGradientStart
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
+    authPreferences: AuthPreferences,
     onNewQuote: () -> Unit,
     onNewInvoice: () -> Unit,
     onOpenTill: () -> Unit,
@@ -59,7 +68,10 @@ fun DashboardScreen(
     onToggleTheme: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val subscriptionState by authPreferences.subscriptionState.collectAsState()
+    val validUntil by authPreferences.validUntil.collectAsState()
     val greeting = remember { greetingForCurrentTime() }
+    var trialEndingBannerDismissed by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         ScreenTitleHeader(
@@ -80,6 +92,26 @@ fun DashboardScreen(
                 .padding(horizontal = 20.dp)
         ) {
         Spacer(Modifier.height(20.dp))
+
+        val daysLeft = validUntil?.let { (it - System.currentTimeMillis()).toDouble() / TimeUnit.DAYS.toMillis(1) }
+        when {
+            subscriptionState == SubscriptionState.LAPSED -> {
+                TrialBanner(
+                    message = TrialGate.LOCKED_MESSAGE,
+                    isPersistent = true,
+                    onDismiss = {}
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+            subscriptionState == SubscriptionState.TRIALING && daysLeft != null && daysLeft in 0.0..2.0 && !trialEndingBannerDismissed -> {
+                TrialBanner(
+                    message = "Your trial ends soon. WhatsApp or call 063 353 1662 to activate SheshaBiz.",
+                    isPersistent = false,
+                    onDismiss = { trialEndingBannerDismissed = true }
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+        }
 
         HeroCard(
             totalQuoted = state.totalQuoted,
@@ -230,6 +262,37 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/** [isPersistent] (lapsed trial) hides the close button entirely — it's non-blocking (the
+ * rest of the dashboard still works) but shouldn't be dismissible, so it keeps reminding the
+ * owner on every visit until they pay. A still-[SubscriptionState.TRIALING] banner is just a
+ * heads-up and can be dismissed for the session. */
+@Composable
+private fun TrialBanner(message: String, isPersistent: Boolean, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(14.dp))
+            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = if (isPersistent) 16.dp else 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.weight(1f)
+        )
+        if (!isPersistent) {
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
     }
 }
 

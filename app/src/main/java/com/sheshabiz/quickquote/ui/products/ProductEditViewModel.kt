@@ -4,7 +4,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.Product
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.repository.ProductRepository
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.domain.Validators
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,11 +29,13 @@ data class ProductEditUiState(
     val isSaving: Boolean = false,
     val isDeleting: Boolean = false,
     val savedProductId: Long? = null,
-    val deleted: Boolean = false
+    val deleted: Boolean = false,
+    val lockedMessage: String? = null
 )
 
 class ProductEditViewModel(
     private val repository: ProductRepository,
+    private val authPreferences: AuthPreferences,
     private val existingProductId: Long?,
     private val copyImageToInternalStorage: suspend (Uri) -> String?
 ) : ViewModel() {
@@ -82,7 +86,14 @@ class ProductEditViewModel(
     fun onStockQuantityChange(v: String) = _uiState.update { it.copy(stockQuantityText = v, stockError = null) }
     fun onLowStockThresholdChange(v: String) = _uiState.update { it.copy(lowStockThresholdText = v) }
 
+    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+
     fun save() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+            return
+        }
+
         val s = _uiState.value
         val nameError = if (Validators.isBlank(s.name)) "Product name is required." else null
         val priceError = if (!Validators.isValidPrice(s.unitPriceText)) "Enter a valid price." else null

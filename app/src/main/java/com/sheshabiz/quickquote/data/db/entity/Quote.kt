@@ -44,5 +44,7 @@ data class Quote(
     val paymentTerms: String?,
     val status: QuoteStatus,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val syncId: String? = null,
+    val deletedAt: Long? = null
 )

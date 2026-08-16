@@ -62,6 +62,7 @@ import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.common.SectionLabel
 import com.sheshabiz.quickquote.ui.common.StatusChip
+import com.sheshabiz.quickquote.ui.common.TrialLockedDialog
 import com.sheshabiz.quickquote.ui.lock.PinConfirmDialog
 import kotlinx.coroutines.launch
 
@@ -80,6 +81,7 @@ fun QuotePreviewScreen(
     val deleted by viewModel.deleted.collectAsState()
     val duplicatedId by viewModel.duplicatedId.collectAsState()
     val convertedInvoiceId by viewModel.convertedInvoiceId.collectAsState()
+    val lockedMessage by viewModel.lockedMessage.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -260,6 +262,10 @@ fun QuotePreviewScreen(
             onDismiss = { showPinConfirm = false },
             onNeedsSetup = onNeedsPinSetup
         )
+    }
+
+    if (lockedMessage != null) {
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = lockedMessage!!)
     }
 }
 

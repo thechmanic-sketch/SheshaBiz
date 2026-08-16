@@ -3,7 +3,9 @@ package com.sheshabiz.quickquote.ui.customers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.Customer
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.domain.Validators
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,11 +23,13 @@ data class CustomerEditUiState(
     val phoneError: String? = null,
     val emailError: String? = null,
     val isSaving: Boolean = false,
-    val savedCustomerId: Long? = null
+    val savedCustomerId: Long? = null,
+    val lockedMessage: String? = null
 )
 
 class CustomerEditViewModel(
     private val repository: CustomerRepository,
+    private val authPreferences: AuthPreferences,
     private val existingCustomerId: Long?
 ) : ViewModel() {
 
@@ -56,7 +60,14 @@ class CustomerEditViewModel(
     fun onEmailChange(v: String) = _uiState.update { it.copy(email = v, emailError = null) }
     fun onAddressChange(v: String) = _uiState.update { it.copy(address = v) }
 
+    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+
     fun save() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+            return
+        }
+
         val s = _uiState.value
         val nameError = if (Validators.isBlank(s.name)) "Customer name is required." else null
         val phoneError = when {
@@ -80,7 +91,8 @@ class CustomerEditViewModel(
                     phone = s.phone.trim(),
                     email = s.email.trim().ifBlank { null },
                     address = s.address.trim().ifBlank { null },
-                    createdAt = s.createdAt
+                    createdAt = s.createdAt,
+                    updatedAt = System.currentTimeMillis()
                 )
             )
             _uiState.update { it.copy(isSaving = false, savedCustomerId = id) }

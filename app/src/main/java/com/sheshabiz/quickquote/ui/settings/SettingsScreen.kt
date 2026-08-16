@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -34,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +46,7 @@ import com.sheshabiz.quickquote.BuildConfig
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.prefs.AuthPreferences
+import com.sheshabiz.quickquote.data.prefs.SubscriptionState
 import com.sheshabiz.quickquote.domain.Country
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
@@ -68,6 +72,8 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsState()
     val isLoggedIn by authPreferences.isLoggedIn.collectAsState()
     val loggedInEmail by authPreferences.loggedInEmail.collectAsState()
+    val subscriptionState by authPreferences.subscriptionState.collectAsState()
+    val lastSyncedAt by authPreferences.lastSyncedAt.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
@@ -303,6 +309,24 @@ fun SettingsScreen(
                         Text("Log out", color = MaterialTheme.colorScheme.error)
                     }
                 }
+                Divider(color = MaterialTheme.colorScheme.outline)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Sync status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            lastSyncedAt?.let { "Last synced ${formatSyncTime(it)}" } ?: "Not synced yet",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    SubscriptionStateChip(subscriptionState)
+                }
             } else {
                 SettingsRow(
                     title = "Account",
@@ -494,6 +518,33 @@ private fun SettingsRow(title: String, subtitle: String, onClick: (() -> Unit)?)
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+@Composable
+private fun SubscriptionStateChip(state: SubscriptionState) {
+    val (bg, fg, label) = when (state) {
+        SubscriptionState.ACTIVE -> Triple(Color(0xFFE1F5E7), Color(0xFF0BA84A), "Active")
+        SubscriptionState.TRIALING -> Triple(Color(0xFFE3EEF9), Color(0xFF3B82C4), "Trial")
+        SubscriptionState.LAPSED -> Triple(Color(0xFFF9E7E5), Color(0xFFC4453B), "Trial ended")
+        SubscriptionState.LOGGED_OUT -> Triple(Color(0xFFEDEDEA), Color(0xFF6B6B6B), "—")
+    }
+    Box(
+        modifier = Modifier
+            .background(bg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(text = label, color = fg, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+private fun formatSyncTime(millis: Long): String {
+    val minutesAgo = (System.currentTimeMillis() - millis) / 60_000
+    return when {
+        minutesAgo < 1 -> "just now"
+        minutesAgo < 60 -> "$minutesAgo min ago"
+        minutesAgo < 24 * 60 -> "${minutesAgo / 60}h ago"
+        else -> SimpleDateFormat("d MMM, HH:mm", Locale.getDefault()).format(Date(millis))
     }
 }
 

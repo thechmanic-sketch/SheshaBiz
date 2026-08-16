@@ -38,4 +38,12 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+
+    /** One-off cross-device sync pass whenever the app comes to the foreground — covers the
+     * initial launch too, since onResume always follows onCreate. No-ops for a logged-out
+     * user (see [com.sheshabiz.quickquote.data.sync.SyncManager.sync]). */
+    override fun onResume() {
+        super.onResume()
+        appContainer().syncScheduler.syncNow()
+    }
 }

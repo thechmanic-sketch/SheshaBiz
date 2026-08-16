@@ -8,15 +8,19 @@ import com.sheshabiz.quickquote.data.db.MIGRATION_1_2
 import com.sheshabiz.quickquote.data.db.MIGRATION_2_3
 import com.sheshabiz.quickquote.data.db.MIGRATION_3_4
 import com.sheshabiz.quickquote.data.db.MIGRATION_4_5
+import com.sheshabiz.quickquote.data.db.MIGRATION_5_6
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
 import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.remote.SupabaseAuthClient
+import com.sheshabiz.quickquote.data.remote.SupabaseRestClient
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
 import com.sheshabiz.quickquote.data.repository.InvoiceRepository
 import com.sheshabiz.quickquote.data.repository.ProductRepository
 import com.sheshabiz.quickquote.data.repository.QuoteRepository
 import com.sheshabiz.quickquote.data.repository.SaleRepository
+import com.sheshabiz.quickquote.data.sync.SyncManager
+import com.sheshabiz.quickquote.data.sync.SyncScheduler
 import com.sheshabiz.quickquote.domain.BackupService
 import com.sheshabiz.quickquote.domain.DemoDataSeeder
 import com.sheshabiz.quickquote.domain.PdfGenerator
@@ -32,11 +36,12 @@ class AppContainer(context: Context) {
         appContext,
         AppDatabase::class.java,
         AppDatabase.DATABASE_NAME
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
 
     val preferences = AppPreferences(appContext)
     val authPreferences = AuthPreferences(appContext)
     val supabaseAuthClient = SupabaseAuthClient
+    val supabaseRestClient = SupabaseRestClient(authPreferences)
     val businessRepository = BusinessRepository(database.businessProfileDao())
     val customerRepository = CustomerRepository(database.customerDao())
     val quoteRepository = QuoteRepository(database, database.quoteDao(), database.quoteItemDao())
@@ -49,6 +54,8 @@ class AppContainer(context: Context) {
         businessRepository, customerRepository, quoteRepository, invoiceRepository, productRepository, saleRepository
     )
     val reminderScheduler = ReminderScheduler(appContext)
+    val syncManager = SyncManager(database, supabaseRestClient, authPreferences)
+    val syncScheduler = SyncScheduler(appContext)
 
     suspend fun copyLogo(uri: Uri): String? = copyLogoToInternalStorage(appContext, uri)
     suspend fun copyProductImage(uri: Uri): String? = copyProductImageToInternalStorage(appContext, uri)

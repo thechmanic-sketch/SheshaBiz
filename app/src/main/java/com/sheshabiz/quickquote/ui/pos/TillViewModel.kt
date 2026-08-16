@@ -9,10 +9,12 @@ import com.sheshabiz.quickquote.data.db.entity.Product
 import com.sheshabiz.quickquote.data.db.entity.Sale
 import com.sheshabiz.quickquote.data.db.entity.SaleItem
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.data.repository.ProductRepository
 import com.sheshabiz.quickquote.data.repository.SaleRepository
 import com.sheshabiz.quickquote.domain.LineItemInput
 import com.sheshabiz.quickquote.domain.QuoteCalculator
+import com.sheshabiz.quickquote.domain.TrialGate
 import com.sheshabiz.quickquote.domain.model.QuoteTotals
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +71,8 @@ data class TillUiState(
 class TillViewModel(
     private val productRepository: ProductRepository,
     private val saleRepository: SaleRepository,
-    private val preferences: AppPreferences
+    private val preferences: AppPreferences,
+    private val authPreferences: AuthPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -166,6 +169,11 @@ class TillViewModel(
     fun dismissError() = _uiState.update { it.copy(error = null) }
 
     fun completeSale() {
+        if (TrialGate.isLocked(authPreferences)) {
+            _uiState.update { it.copy(error = TrialGate.LOCKED_MESSAGE) }
+            return
+        }
+
         val s = _uiState.value
         if (s.cart.isEmpty()) {
             _uiState.update { it.copy(error = "Add at least one item.") }

@@ -31,5 +31,7 @@ data class SaleItem(
     val quantity: Double,
     val unitPrice: Double,
     val lineTotal: Double,
-    val sortOrder: Int
+    val sortOrder: Int,
+    val syncId: String? = null,
+    val deletedAt: Long? = null
 )
