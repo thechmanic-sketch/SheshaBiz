@@ -44,7 +44,7 @@ jobs:
       - name: Build web app (static export)
         working-directory: webapp/web
         env:
-          NEXT_PUBLIC_BASE_PATH: /app
+          NEXT_PUBLIC_BASE_PATH: /SheshaBiz/app
         run: npm run build
 
       - name: Assemble combined site
