@@ -15,6 +15,8 @@ import {
   Settings,
   Search,
   Bell,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAppData } from "@/lib/store";
 import type { ComponentType } from "react";
@@ -65,6 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGreetingText(greeting());
   }, []);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen">
@@ -98,10 +101,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex flex-1 flex-col min-w-0">
-        <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-4 no-print">
-          <div>
-            <p className="text-sm text-ink-faint">{greetingText}</p>
-            <h1 className="text-lg font-bold">{data.business.name}</h1>
+        <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-4 sm:px-6 no-print">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06] md:hidden"
+            >
+              <Menu size={20} />
+            </button>
+            <div>
+              <p className="text-sm text-ink-faint">{greetingText}</p>
+              <h1 className="text-lg font-bold">{data.business.name}</h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -154,6 +167,56 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </div>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden no-print">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80vw] flex-col bg-surface px-4 py-6 shadow-xl">
+            <div className="flex items-center justify-between px-2 mb-8">
+              <div className="flex items-center gap-2.5">
+                <Image src={`${basePath}/logo-mark.png`} alt="" width={28} height={28} />
+                <span className="font-bold text-lg">
+                  Shesha<span className="text-brand-deep">Biz</span>
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {navItems.map((item) => {
+                const active = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-brand text-white"
+                        : "text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
