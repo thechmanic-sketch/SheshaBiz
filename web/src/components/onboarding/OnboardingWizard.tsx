@@ -6,6 +6,7 @@ import { ArrowRight, Package } from "lucide-react";
 import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
 import { COUNTRIES, type Country } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -13,9 +14,38 @@ const inputCls =
   "w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-brand";
 const labelCls = "text-xs font-semibold text-ink-faint";
 
+// Fire-and-forget trial-signup capture: records that a business started using
+// the app, purely for the owner's own trial/anti-abuse records. No login,
+// password, or session results from this — it's a one-way insert, never read
+// back by the app, and never allowed to block or delay onboarding.
+function submitSignup(businessName: string, contact: string, country: Country) {
+  (async () => {
+    try {
+      let ip: string | null = null;
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        ip = (await res.json()).ip ?? null;
+      } catch {
+        ip = null;
+      }
+      await supabase.from("signups").insert({
+        business_name: businessName,
+        contact,
+        contact_type: contact.includes("@") ? "email" : "phone",
+        country,
+        platform: "web",
+        ip_address: ip,
+      });
+    } catch {
+      // best-effort only; never surfaced to the user
+    }
+  })();
+}
+
 export function OnboardingWizard() {
   const { completeOnboarding } = useAppData();
   const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
   const [country, setCountry] = useState<Country>("south_africa");
   const [vatRate, setVatRate] = useState("15");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
@@ -27,6 +57,11 @@ export function OnboardingWizard() {
       setError("Add your business name to continue.");
       return;
     }
+    if (!contact.trim()) {
+      setError("Add your email or phone number to continue.");
+      return;
+    }
+    submitSignup(name.trim(), contact.trim(), country);
     completeOnboarding({
       name: name.trim(),
       country,
@@ -83,6 +118,16 @@ export function OnboardingWizard() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Sipho's Plumbing"
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Email or phone</label>
+              <input
+                className={`${inputCls} mt-1`}
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                placeholder="you@business.com or 082 123 4567"
               />
             </div>
 
