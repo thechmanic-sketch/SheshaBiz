@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sheshabiz.quickquote.data.db.entity.BusinessProfile
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.remote.SignupApi
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.domain.Validators
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,6 +118,8 @@ class BusinessSetupViewModel(
             return
         }
 
+        val isFirstSetup = !preferences.businessSetupComplete.value
+
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             businessRepository.saveProfile(
@@ -139,6 +142,19 @@ class BusinessSetupViewModel(
             )
             preferences.setBusinessSetupComplete(true)
             _uiState.update { it.copy(isSaving = false, saved = true) }
+
+            // Record the trial signup once, the first time setup completes. Fire-and-forget:
+            // never blocks the UI and is never retried if it fails offline.
+            if (isFirstSetup) {
+                launch {
+                    SignupApi.submitSignup(
+                        businessName = s.businessName.trim(),
+                        contact = s.email.trim(),
+                        contactType = "email",
+                        country = preferences.country.value.displayName
+                    )
+                }
+            }
         }
     }
 }
