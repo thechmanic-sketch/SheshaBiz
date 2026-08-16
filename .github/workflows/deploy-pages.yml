@@ -1,0 +1,73 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main, web]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout marketing site (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: site
+
+      - name: Checkout web app (web)
+        uses: actions/checkout@v4
+        with:
+          ref: web
+          path: webapp
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: webapp/web/package-lock.json
+
+      - name: Install web app dependencies
+        working-directory: webapp/web
+        run: npm ci
+
+      - name: Build web app (static export)
+        working-directory: webapp/web
+        env:
+          NEXT_PUBLIC_BASE_PATH: /app
+        run: npm run build
+
+      - name: Assemble combined site
+        run: |
+          mkdir -p dist
+          cp site/*.html dist/
+          cp -r site/assets dist/assets
+          mkdir -p dist/app
+          cp -r webapp/web/out/. dist/app/
+          touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
