@@ -24,6 +24,8 @@ interface NavItem {
   icon: ComponentType<{ size?: number; className?: string }>;
 }
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/quotes", label: "Quotes", icon: ReceiptText },
@@ -42,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-line bg-surface px-4 py-6">
         <div className="flex items-center gap-2.5 px-2 mb-8">
-          <Image src="/logo-mark.png" alt="" width={28} height={28} />
+          <Image src={`${basePath}/logo-mark.png`} alt="" width={28} height={28} />
           <span className="font-bold text-lg">
             Shesha<span className="text-brand-deep">Biz</span>
           </span>
