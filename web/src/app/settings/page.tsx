@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff } from "lucide-react";
+import Link from "next/link";
+import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { PinSetupModal } from "@/components/settings/PinSetupModal";
 import { SupabaseStatus } from "@/components/settings/SupabaseStatus";
 import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { COUNTRIES, type Country } from "@/lib/types";
 
 const inputCls =
@@ -25,6 +27,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export default function SettingsPage() {
   const { data, updateBusiness, exportJson, importJson, resetDemoData } = useAppData();
+  const { isLoggedIn, email, signOut } = useAuth();
   const { business } = data;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -229,6 +232,43 @@ export default function SettingsPage() {
             onChange={(e) => updateBusiness({ paymentTerms: e.target.value })}
           />
           <p className="text-xs text-ink-faint">Shown on the footer of quotes and invoices.</p>
+        </Card>
+
+        <Card title="Account">
+          {isLoggedIn ? (
+            <>
+              <p className="text-sm text-ink-soft">
+                Logged in as <span className="font-semibold text-ink">{email}</span>.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+                >
+                  <LogOut size={15} />
+                  Log out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-ink-soft">
+                Create an account to secure future access to SheshaBiz — for example, if you get a
+                new phone. This doesn&apos;t sync or back up your data yet; it only lets you prove
+                it&apos;s you later.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/auth"
+                  className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+                >
+                  <LogIn size={15} />
+                  Create account / Log in
+                </Link>
+              </div>
+            </>
+          )}
         </Card>
 
         <Card title="Cloud sync">
