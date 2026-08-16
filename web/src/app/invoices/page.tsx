@@ -1,16 +1,44 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { InvoiceBadge } from "@/components/ui/Badge";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { FilterChips } from "@/components/ui/FilterChips";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
-import { quoteTotals } from "@/lib/types";
+import { effectiveInvoiceStatus, quoteTotals, type InvoiceStatus } from "@/lib/types";
+import { useToday } from "@/lib/useToday";
+
+type StatusFilter = InvoiceStatus | "all";
+
+const statusOptions: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unpaid", label: "Unpaid" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 export default function InvoicesPage() {
   const { data } = useAppData();
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const today = useToday();
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return data.invoices.filter((invoice) => {
+      if (status !== "all" && effectiveInvoiceStatus(invoice, today) !== status) return false;
+      if (!q) return true;
+      return (
+        invoice.number.toLowerCase().includes(q) || invoice.customerName.toLowerCase().includes(q)
+      );
+    });
+  }, [data.invoices, search, status, today]);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -25,7 +53,12 @@ export default function InvoicesPage() {
         </Link>
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-2xl border border-line bg-surface">
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search invoices…" />
+        <FilterChips options={statusOptions} value={status} onChange={setStatus} />
+      </div>
+
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-ink-faint">
@@ -37,7 +70,7 @@ export default function InvoicesPage() {
             </tr>
           </thead>
           <tbody>
-            {data.invoices.map((invoice) => (
+            {filtered.map((invoice) => (
               <tr
                 key={invoice.id}
                 onClick={() => router.push(`/invoices/view?id=${invoice.id}`)}
@@ -51,17 +84,17 @@ export default function InvoicesPage() {
                 <td className="px-5 py-4 font-semibold">{invoice.customerName}</td>
                 <td className="px-5 py-4 text-ink-soft">{invoice.dueDate}</td>
                 <td className="px-5 py-4">
-                  <InvoiceBadge status={invoice.status} />
+                  <InvoiceBadge status={effectiveInvoiceStatus(invoice, today)} />
                 </td>
                 <td className="px-5 py-4 text-right font-bold tabular">
                   {formatCurrency(quoteTotals(invoice, data.business.vatRate).total, data.business.country)}
                 </td>
               </tr>
             ))}
-            {data.invoices.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
-                  No invoices yet.
+                  {data.invoices.length === 0 ? "No invoices yet." : "No invoices match your search."}
                 </td>
               </tr>
             )}

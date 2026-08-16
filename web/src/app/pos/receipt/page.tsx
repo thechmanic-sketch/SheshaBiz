@@ -3,10 +3,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Printer, ShoppingCart } from "lucide-react";
+import { Printer, Share2, ShoppingCart } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
 import { lineItemsTotal } from "@/lib/types";
+import { formatCurrency } from "@/lib/currency";
+import { shareText } from "@/lib/share";
 
 const methodLabel = { cash: "Cash", card: "Card", eft: "EFT" } as const;
 
@@ -36,6 +38,15 @@ function ReceiptInner() {
         ]
       : undefined;
 
+  function handleShare() {
+    const summary = [
+      `${data.business.name} — Receipt ${sale!.number}`,
+      `Total: ${formatCurrency(total, data.business.country)}`,
+      `Paid by ${methodLabel[sale!.paymentMethod]}`,
+    ].join("\n");
+    shareText(`Receipt ${sale!.number}`, summary);
+  }
+
   return (
     <div>
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 no-print">
@@ -48,6 +59,14 @@ function ReceiptInner() {
           >
             <Printer size={15} />
             Print
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+          >
+            <Share2 size={15} />
+            Share
           </button>
           <Link
             href="/pos"

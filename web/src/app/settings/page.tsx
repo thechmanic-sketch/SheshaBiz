@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Upload, RotateCcw } from "lucide-react";
+import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { fileToDataUrl } from "@/lib/files";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { PinSetupModal } from "@/components/settings/PinSetupModal";
+import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
 import { COUNTRIES, type Country } from "@/lib/types";
 
@@ -26,6 +28,8 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [pinSetupOpen, setPinSetupOpen] = useState(false);
+  const [confirmRemovePin, setConfirmRemovePin] = useState(false);
 
   function handleExport() {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -68,7 +72,7 @@ export default function SettingsPage() {
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) updateBusiness({ logoDataUrl: await fileToDataUrl(file) });
+                  if (file) updateBusiness({ logoDataUrl: await fileToCompressedDataUrl(file, 400) });
                 }}
               />
             </label>
@@ -178,6 +182,45 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        <Card title="Security">
+          <p className="text-sm text-ink-soft">
+            {business.deletePinHash
+              ? "A PIN is required before deleting a quote, invoice, product, or customer."
+              : "Optionally require a PIN before deleting anything, as a safeguard against accidental taps."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {business.deletePinHash ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPinSetupOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+                >
+                  <ShieldCheck size={15} />
+                  Change PIN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmRemovePin(true)}
+                  className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-error hover:bg-error/10"
+                >
+                  <ShieldOff size={15} />
+                  Remove PIN
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPinSetupOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+              >
+                <ShieldCheck size={15} />
+                Set PIN
+              </button>
+            )}
+          </div>
+        </Card>
+
         <Card title="Payment terms">
           <textarea
             className={`${inputCls} min-h-20`}
@@ -243,6 +286,26 @@ export default function SettingsPage() {
         onConfirm={() => {
           resetDemoData();
           setConfirmReset(false);
+        }}
+      />
+
+      <PinSetupModal
+        open={pinSetupOpen}
+        onClose={() => setPinSetupOpen(false)}
+        onSet={(hash) => {
+          updateBusiness({ deletePinHash: hash });
+          setPinSetupOpen(false);
+        }}
+      />
+
+      <DeleteConfirmDialog
+        open={confirmRemovePin}
+        title="Remove PIN protection?"
+        message="Deletions will no longer require a PIN."
+        onCancel={() => setConfirmRemovePin(false)}
+        onConfirm={() => {
+          updateBusiness({ deletePinHash: null });
+          setConfirmRemovePin(false);
         }}
       />
     </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { useAppData } from "@/lib/store";
 import type { Customer } from "@/lib/types";
 
@@ -19,6 +20,18 @@ export default function CustomersPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return data.customers;
+    return data.customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.phone.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q)
+    );
+  }, [data.customers, search]);
 
   function openNew() {
     setName("");
@@ -61,8 +74,12 @@ export default function CustomersPage() {
         </button>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2.5">
-        {data.customers.map((customer) => (
+      <div className="mt-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        {filtered.map((customer) => (
           <div
             key={customer.id}
             className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4"
@@ -96,10 +113,10 @@ export default function CustomersPage() {
             </div>
           </div>
         ))}
-        {data.customers.length === 0 && (
+        {filtered.length === 0 && (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface py-16 text-center text-ink-faint">
             <Users size={22} />
-            No customers yet.
+            {data.customers.length === 0 ? "No customers yet." : "No customers match your search."}
           </div>
         )}
       </div>
@@ -139,12 +156,10 @@ export default function CustomersPage() {
         </form>
       </Modal>
 
-      <ConfirmDialog
+      <DeleteConfirmDialog
         open={deleteTarget !== null}
         title="Delete this customer?"
         message={deleteTarget ? `${deleteTarget.name} will be removed from your customer list.` : ""}
-        confirmLabel="Delete"
-        danger
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) deleteCustomer(deleteTarget.id);

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
-import { lineItemsTotal, quoteTotals } from "@/lib/types";
+import { effectiveInvoiceStatus, lineItemsTotal, quoteTotals } from "@/lib/types";
+import { useToday } from "@/lib/useToday";
 
 type Period = "today" | "week" | "month" | "all";
 
@@ -41,14 +42,7 @@ function StatRow({ label, value, warn }: { label: string; value: string; warn?: 
 export default function ReportsPage() {
   const { data } = useAppData();
   const [period, setPeriod] = useState<Period>("month");
-  const [today, setToday] = useState("");
-
-  useEffect(() => {
-    // Client-only: the build machine's clock never matches the viewer's, so
-    // baking "today" into the static HTML would break hydration.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setToday(new Date().toISOString().slice(0, 10));
-  }, []);
+  const today = useToday();
 
   const stats = useMemo(() => {
     const cutoff = cutoffFor(period);
@@ -62,8 +56,8 @@ export default function ReportsPage() {
     const quotesAccepted = quotes.filter((q) => q.status === "accepted").length;
 
     const paid = invoices.filter((i) => i.status === "paid");
-    const unpaid = invoices.filter((i) => i.status === "unpaid");
-    const overdue = invoices.filter((i) => i.status === "overdue");
+    const unpaid = invoices.filter((i) => effectiveInvoiceStatus(i, today) === "unpaid");
+    const overdue = invoices.filter((i) => effectiveInvoiceStatus(i, today) === "overdue");
 
     const salesTotal = sales.reduce((sum, s) => sum + lineItemsTotal(s.lineItems), 0);
 
@@ -79,7 +73,7 @@ export default function ReportsPage() {
       salesTotal,
       salesCount: sales.length,
     };
-  }, [data, period]);
+  }, [data, period, today]);
 
   const country = data.business.country;
 

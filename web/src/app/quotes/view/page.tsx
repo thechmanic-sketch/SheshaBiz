@@ -3,12 +3,14 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Printer, Send, CheckCircle2, XCircle, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Pencil, Printer, Share2, Send, CheckCircle2, XCircle, ArrowRightLeft, Trash2 } from "lucide-react";
 import { QuoteBadge } from "@/components/ui/Badge";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
 import { quoteTotals } from "@/lib/types";
+import { formatCurrency } from "@/lib/currency";
+import { shareText } from "@/lib/share";
 
 function ActionButton({
   onClick,
@@ -72,6 +74,18 @@ function QuoteViewInner() {
     if (invoice) router.push(`/invoices/view?id=${invoice.id}`);
   }
 
+  function handleShare() {
+    const summary = [
+      `${data.business.name} — Quote ${quote!.number}`,
+      quote!.description ? quote!.description : null,
+      `For: ${quote!.customerName}`,
+      `Total: ${formatCurrency(totals.total, data.business.country)}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    shareText(`Quote ${quote!.number}`, summary);
+  }
+
   return (
     <div>
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 no-print">
@@ -102,6 +116,7 @@ function QuoteViewInner() {
             <ActionButton onClick={handleConvert} icon={ArrowRightLeft} label="Convert to invoice" primary />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
+          <ActionButton onClick={handleShare} icon={Share2} label="Share" />
           <ActionButton onClick={() => setConfirmDelete(true)} icon={Trash2} label="Delete" danger />
         </div>
       </div>
@@ -132,12 +147,10 @@ function QuoteViewInner() {
         />
       </div>
 
-      <ConfirmDialog
+      <DeleteConfirmDialog
         open={confirmDelete}
         title="Delete this quote?"
         message={`${quote.number} for ${quote.customerName} will be permanently removed.`}
-        confirmLabel="Delete"
-        danger
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           deleteQuote(quote.id);

@@ -43,6 +43,7 @@ interface AppData {
   quoteCounter: number;
   invoiceCounter: number;
   saleCounter: number;
+  onboarded: boolean;
 }
 
 const seedData: AppData = {
@@ -53,6 +54,7 @@ const seedData: AppData = {
   invoices: seedInvoices,
   sales: seedSales,
   ...seedCounters,
+  onboarded: false,
 };
 
 function newId(): string {
@@ -113,6 +115,7 @@ interface AppDataContextValue {
   exportJson: () => string;
   importJson: (json: string) => boolean;
   resetDemoData: () => void;
+  completeOnboarding: (profile: Partial<BusinessProfile>) => void;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -133,8 +136,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     // server-rendered seed data hydrates cleanly before this client-only read.
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (raw) setData(JSON.parse(raw) as AppData);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AppData;
+        // Blobs saved before onboarding existed have no `onboarded` field.
+        // Their presence at all means this browser already has real usage,
+        // so treat that as already onboarded rather than re-prompting.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setData({ ...parsed, onboarded: parsed.onboarded ?? true });
+      }
     } catch {
       // ignore corrupt storage, keep seed data
     }
@@ -339,14 +348,38 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     try {
       const parsed = JSON.parse(json) as AppData;
       if (!parsed.business || !Array.isArray(parsed.quotes)) return false;
-      setData(parsed);
+      setData({ ...parsed, onboarded: parsed.onboarded ?? true });
       return true;
     } catch {
       return false;
     }
   }, []);
 
-  const resetDemoData = useCallback(() => setData(seedData), []);
+  // Resetting demo data is something an already-onboarded user does from
+  // Settings, not a fresh install, so it should not re-trigger onboarding.
+  const resetDemoData = useCallback(() => setData({ ...seedData, onboarded: true }), []);
+
+  const completeOnboarding = useCallback(
+    (profile: Partial<BusinessProfile>) => {
+      setData({
+        ...data,
+        business: { ...data.business, ...profile },
+        // A fresh business starts with a clean slate, not the sample
+        // "Sipho's Plumbing" quotes/invoices/customers/products used to
+        // demonstrate the app before setup.
+        customers: [],
+        products: [],
+        quotes: [],
+        invoices: [],
+        sales: [],
+        quoteCounter: 0,
+        invoiceCounter: 0,
+        saleCounter: 0,
+        onboarded: true,
+      });
+    },
+    [data]
+  );
 
   const value = useMemo<AppDataContextValue>(
     () => ({
@@ -370,6 +403,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       exportJson,
       importJson,
       resetDemoData,
+      completeOnboarding,
     }),
     [
       data,
@@ -392,6 +426,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       exportJson,
       importJson,
       resetDemoData,
+      completeOnboarding,
     ]
   );
 

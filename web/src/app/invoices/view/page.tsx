@@ -3,12 +3,15 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Printer, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, Printer, Share2, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { InvoiceBadge } from "@/components/ui/Badge";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
-import { quoteTotals } from "@/lib/types";
+import { effectiveInvoiceStatus, quoteTotals } from "@/lib/types";
+import { useToday } from "@/lib/useToday";
+import { formatCurrency } from "@/lib/currency";
+import { shareText } from "@/lib/share";
 
 function ActionButton({
   onClick,
@@ -47,6 +50,7 @@ function InvoiceViewInner() {
   const id = params.get("id") ?? "";
   const { data, updateInvoice, deleteInvoice } = useAppData();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const today = useToday();
 
   const invoice = data.invoices.find((i) => i.id === id);
 
@@ -63,12 +67,22 @@ function InvoiceViewInner() {
 
   const totals = quoteTotals(invoice, data.business.vatRate);
 
+  function handleShare() {
+    const summary = [
+      `${data.business.name} — Invoice ${invoice!.number}`,
+      `For: ${invoice!.customerName}`,
+      `Due: ${invoice!.dueDate}`,
+      `Total: ${formatCurrency(totals.total, data.business.country)}`,
+    ].join("\n");
+    shareText(`Invoice ${invoice!.number}`, summary);
+  }
+
   return (
     <div>
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 no-print">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold">{invoice.number}</h1>
-          <InvoiceBadge status={invoice.status} />
+          <InvoiceBadge status={effectiveInvoiceStatus(invoice, today)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton
@@ -92,6 +106,7 @@ function InvoiceViewInner() {
             />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
+          <ActionButton onClick={handleShare} icon={Share2} label="Share" />
           <ActionButton onClick={() => setConfirmDelete(true)} icon={Trash2} label="Delete" danger />
         </div>
       </div>
@@ -112,12 +127,10 @@ function InvoiceViewInner() {
         />
       </div>
 
-      <ConfirmDialog
+      <DeleteConfirmDialog
         open={confirmDelete}
         title="Delete this invoice?"
         message={`${invoice.number} for ${invoice.customerName} will be permanently removed.`}
-        confirmLabel="Delete"
-        danger
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           deleteInvoice(invoice.id);

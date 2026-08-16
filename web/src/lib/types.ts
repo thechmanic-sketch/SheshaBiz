@@ -47,6 +47,7 @@ export interface BusinessProfile {
   quotePrefix: string;
   invoicePrefix: string;
   receiptPrefix: string;
+  deletePinHash: string | null;
 }
 
 export interface Customer {
@@ -108,6 +109,27 @@ export interface Sale {
   amountTendered: number | null;
   changeGiven: number | null;
   createdAt: string;
+}
+
+/**
+ * The invoice's displayed status. "overdue" is derived, not stored: an
+ * invoice that's still "unpaid" past its due date reads as overdue
+ * everywhere in the UI without needing anything to actively flip its
+ * stored status (which stays "unpaid" so the mark-paid/unpaid toggle
+ * keeps working normally).
+ *
+ * `today` is required (no `new Date()` default) on purpose: this runs
+ * during render, including the prerendered static HTML, and the build
+ * machine's clock never matches the viewer's — get it from useToday(),
+ * which returns "" until after mount so this safely resolves to the
+ * non-overdue stored status until the real date is available.
+ */
+export function effectiveInvoiceStatus(
+  invoice: Pick<Invoice, "status" | "dueDate">,
+  today: string
+): InvoiceStatus {
+  if (invoice.status === "unpaid" && invoice.dueDate < today) return "overdue";
+  return invoice.status;
 }
 
 export function lineItemsTotal(items: LineItem[]): number {

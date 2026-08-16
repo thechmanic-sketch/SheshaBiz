@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useAppData } from "@/lib/store";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import type { ComponentType } from "react";
 
 function greeting(): string {
@@ -58,7 +59,7 @@ const navItems: NavItem[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data } = useAppData();
+  const { data, loaded } = useAppData();
   // Time-of-day greeting is computed after mount only: it depends on the
   // viewer's clock, which never matches the build machine's clock, so
   // rendering it during SSR would cause a hydration mismatch.
@@ -68,6 +69,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setGreetingText(greeting());
   }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (!loaded) {
+    // Briefly shown while the localStorage load effect resolves. Its
+    // absence would otherwise flash a "not onboarded" wizard for anyone
+    // who has already set up their business, since seed data (used for
+    // this component's very first render, before the load effect runs)
+    // defaults onboarded to false.
+    return <div className="min-h-screen bg-paper" />;
+  }
+
+  if (!data.onboarded) {
+    return <OnboardingWizard />;
+  }
 
   return (
     <div className="flex min-h-screen">

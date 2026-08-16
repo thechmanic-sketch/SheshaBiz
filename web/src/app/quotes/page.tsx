@@ -1,16 +1,44 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { QuoteBadge } from "@/components/ui/Badge";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { FilterChips } from "@/components/ui/FilterChips";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
-import { quoteTotals } from "@/lib/types";
+import { quoteTotals, type QuoteStatus } from "@/lib/types";
+
+type StatusFilter = QuoteStatus | "all";
+
+const statusOptions: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent" },
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
+];
 
 export default function QuotesPage() {
   const { data } = useAppData();
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return data.quotes.filter((quote) => {
+      if (status !== "all" && quote.status !== status) return false;
+      if (!q) return true;
+      return (
+        quote.number.toLowerCase().includes(q) ||
+        quote.customerName.toLowerCase().includes(q) ||
+        quote.description.toLowerCase().includes(q)
+      );
+    });
+  }, [data.quotes, search, status]);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -25,7 +53,12 @@ export default function QuotesPage() {
         </Link>
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-2xl border border-line bg-surface">
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search quotes…" />
+        <FilterChips options={statusOptions} value={status} onChange={setStatus} />
+      </div>
+
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-ink-faint">
@@ -37,7 +70,7 @@ export default function QuotesPage() {
             </tr>
           </thead>
           <tbody>
-            {data.quotes.map((quote) => (
+            {filtered.map((quote) => (
               <tr
                 key={quote.id}
                 onClick={() => router.push(`/quotes/view?id=${quote.id}`)}
@@ -58,10 +91,10 @@ export default function QuotesPage() {
                 </td>
               </tr>
             ))}
-            {data.quotes.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-ink-faint">
-                  No quotes yet.
+                  {data.quotes.length === 0 ? "No quotes yet." : "No quotes match your search."}
                 </td>
               </tr>
             )}

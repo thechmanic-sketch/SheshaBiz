@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Receipt, ShoppingCart } from "lucide-react";
+import { AlertTriangle, FileText, Receipt, ShoppingCart } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { QuoteBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/currency";
 import { useAppData } from "@/lib/store";
-import { quoteTotals } from "@/lib/types";
+import { effectiveInvoiceStatus, quoteTotals } from "@/lib/types";
+import { useToday } from "@/lib/useToday";
 
 const heroActions = [
   { href: "/quotes/new", label: "New Quote", icon: Receipt },
@@ -16,7 +17,8 @@ const heroActions = [
 
 export default function DashboardPage() {
   const { data } = useAppData();
-  const { business, quotes } = data;
+  const { business, quotes, invoices } = data;
+  const today = useToday();
 
   const totalQuoted = quotes.reduce(
     (sum, q) => sum + quoteTotals(q, business.vatRate).total,
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const quotesSent = quotes.filter((q) => q.status !== "draft").length;
   const quotesAccepted = quotes.filter((q) => q.status === "accepted").length;
   const recentQuotes = quotes.slice(0, 4);
+  const overdueInvoices = invoices.filter((i) => effectiveInvoiceStatus(i, today) === "overdue");
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -55,6 +58,29 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      {overdueInvoices.length > 0 && (
+        <Link
+          href="/invoices"
+          className="mt-5 flex items-center gap-3 rounded-2xl border border-error/30 bg-error/10 p-4 hover:border-error/50"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-error/15 text-error">
+            <AlertTriangle size={18} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-error">
+              {overdueInvoices.length} invoice{overdueInvoices.length === 1 ? "" : "s"} overdue
+            </p>
+            <p className="text-xs text-ink-faint">
+              {formatCurrency(
+                overdueInvoices.reduce((sum, i) => sum + quoteTotals(i, business.vatRate).total, 0),
+                business.country
+              )}{" "}
+              outstanding past due date — tap to review
+            </p>
+          </div>
+        </Link>
+      )}
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard value={String(quotesCreated)} label="Quotes created" />

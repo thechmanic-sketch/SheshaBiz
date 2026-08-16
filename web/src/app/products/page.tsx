@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Package } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { formatCurrency } from "@/lib/currency";
-import { fileToDataUrl } from "@/lib/files";
+import { fileToCompressedDataUrl } from "@/lib/files";
 import { useAppData } from "@/lib/store";
 import type { Product } from "@/lib/types";
 
@@ -51,7 +52,7 @@ function ProductFormFields({
             className="hidden"
             onChange={async (e) => {
               const file = e.target.files?.[0];
-              if (file) setImageDataUrl(await fileToDataUrl(file));
+              if (file) setImageDataUrl(await fileToCompressedDataUrl(file, 600));
             }}
           />
         </label>
@@ -96,6 +97,13 @@ export default function ProductsPage() {
   const [price, setPrice] = useState("");
   const [stockQty, setStockQty] = useState("");
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return data.products;
+    return data.products.filter((p) => p.name.toLowerCase().includes(q));
+  }, [data.products, search]);
 
   function openNew() {
     setName("");
@@ -143,8 +151,12 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {data.products.map((product) => (
+      <div className="mt-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search products…" />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {filtered.map((product) => (
           <div key={product.id} className="rounded-2xl border border-line bg-surface p-4">
             {product.imageDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -178,8 +190,10 @@ export default function ProductsPage() {
             </div>
           </div>
         ))}
-        {data.products.length === 0 && (
-          <p className="col-span-full py-10 text-center text-ink-faint">No products yet.</p>
+        {filtered.length === 0 && (
+          <p className="col-span-full py-10 text-center text-ink-faint">
+            {data.products.length === 0 ? "No products yet." : "No products match your search."}
+          </p>
         )}
       </div>
 
@@ -205,12 +219,10 @@ export default function ProductsPage() {
         </form>
       </Modal>
 
-      <ConfirmDialog
+      <DeleteConfirmDialog
         open={deleteTarget !== null}
         title="Delete this product?"
         message={deleteTarget ? `${deleteTarget.name} will be removed from your catalog.` : ""}
-        confirmLabel="Delete"
-        danger
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) deleteProduct(deleteTarget.id);

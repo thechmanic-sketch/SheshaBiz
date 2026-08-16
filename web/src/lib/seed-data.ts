@@ -13,6 +13,7 @@ export const seedBusiness: BusinessProfile = {
   quotePrefix: "Q",
   invoicePrefix: "INV",
   receiptPrefix: "R",
+  deletePinHash: null,
 };
 
 export const seedCustomers: Customer[] = [
