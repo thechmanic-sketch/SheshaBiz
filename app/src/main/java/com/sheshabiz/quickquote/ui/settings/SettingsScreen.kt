@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.BuildConfig
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
 import com.sheshabiz.quickquote.domain.Country
 import com.sheshabiz.quickquote.ui.common.QQOutlinedButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
@@ -58,11 +59,15 @@ import java.util.Locale
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     preferences: AppPreferences,
+    authPreferences: AuthPreferences,
     onEditBusinessProfile: () -> Unit,
     onSetupPin: () -> Unit,
+    onOpenAccount: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isLoggedIn by authPreferences.isLoggedIn.collectAsState()
+    val loggedInEmail by authPreferences.loggedInEmail.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
@@ -272,6 +277,38 @@ fun SettingsScreen(
                     Switch(checked = state.biometricEnabled, onCheckedChange = viewModel::onBiometricChange)
                 }
                 Spacer(Modifier.height(8.dp))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+
+        SectionLabel("Account")
+        SettingsCard {
+            if (isLoggedIn) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Logged in", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            loggedInEmail ?: "",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    TextButton(onClick = { authPreferences.clearSession() }) {
+                        Text("Log out", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else {
+                SettingsRow(
+                    title = "Account",
+                    subtitle = "Log in or create an account",
+                    onClick = onOpenAccount
+                )
             }
         }
         Spacer(Modifier.height(20.dp))

@@ -9,6 +9,8 @@ import com.sheshabiz.quickquote.data.db.MIGRATION_2_3
 import com.sheshabiz.quickquote.data.db.MIGRATION_3_4
 import com.sheshabiz.quickquote.data.db.MIGRATION_4_5
 import com.sheshabiz.quickquote.data.prefs.AppPreferences
+import com.sheshabiz.quickquote.data.prefs.AuthPreferences
+import com.sheshabiz.quickquote.data.remote.SupabaseAuthClient
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import com.sheshabiz.quickquote.data.repository.CustomerRepository
 import com.sheshabiz.quickquote.data.repository.InvoiceRepository
@@ -33,6 +35,8 @@ class AppContainer(context: Context) {
     ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
 
     val preferences = AppPreferences(appContext)
+    val authPreferences = AuthPreferences(appContext)
+    val supabaseAuthClient = SupabaseAuthClient
     val businessRepository = BusinessRepository(database.businessProfileDao())
     val customerRepository = CustomerRepository(database.customerDao())
     val quoteRepository = QuoteRepository(database, database.quoteDao(), database.quoteItemDao())

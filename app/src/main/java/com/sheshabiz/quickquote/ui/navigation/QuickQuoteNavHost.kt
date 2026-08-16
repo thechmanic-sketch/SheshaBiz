@@ -48,6 +48,8 @@ import androidx.navigation.NavType
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.di.AppContainer
 import com.sheshabiz.quickquote.di.viewModelFactory
+import com.sheshabiz.quickquote.ui.auth.AuthScreen
+import com.sheshabiz.quickquote.ui.auth.AuthViewModel
 import com.sheshabiz.quickquote.ui.businesssetup.BusinessSetupScreen
 import com.sheshabiz.quickquote.ui.businesssetup.BusinessSetupViewModel
 import com.sheshabiz.quickquote.ui.customers.CustomerEditScreen
@@ -325,8 +327,26 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 SettingsScreen(
                     viewModel = vm,
                     preferences = container.preferences,
+                    authPreferences = container.authPreferences,
                     onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) },
                     onSetupPin = { navController.navigate(Routes.PIN_SETUP) },
+                    onOpenAccount = { navController.navigate(Routes.ACCOUNT_LOGIN) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.ACCOUNT_LOGIN) {
+                val vm = viewModel<AuthViewModel>(
+                    factory = viewModelFactory {
+                        AuthViewModel(
+                            authClient = container.supabaseAuthClient,
+                            authPreferences = container.authPreferences
+                        )
+                    }
+                )
+                AuthScreen(
+                    viewModel = vm,
+                    onDone = { navController.popBackStack() },
                     onBack = { navController.popBackStack() }
                 )
             }
