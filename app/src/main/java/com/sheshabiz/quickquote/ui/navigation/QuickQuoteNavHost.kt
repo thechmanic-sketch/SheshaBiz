@@ -89,6 +89,8 @@ import com.sheshabiz.quickquote.ui.reports.ReportsViewModel
 import com.sheshabiz.quickquote.ui.settings.SettingsScreen
 import com.sheshabiz.quickquote.ui.settings.SettingsViewModel
 import com.sheshabiz.quickquote.ui.splash.SplashScreen
+import com.sheshabiz.quickquote.ui.subscription.SubscriptionScreen
+import com.sheshabiz.quickquote.ui.subscription.SubscriptionViewModel
 import kotlinx.coroutines.launch
 
 private data class BottomTab(val route: String, val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -332,7 +334,20 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     onEditBusinessProfile = { navController.navigate(Routes.EDIT_BUSINESS_PROFILE) },
                     onSetupPin = { navController.navigate(Routes.PIN_SETUP) },
                     onOpenAccount = { navController.navigate(Routes.ACCOUNT_LOGIN) },
+                    onOpenSubscription = { navController.navigate(Routes.SUBSCRIPTION) },
                     onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.SUBSCRIPTION) {
+                val vm = viewModel<SubscriptionViewModel>(
+                    factory = viewModelFactory { SubscriptionViewModel(container.businessRepository) }
+                )
+                SubscriptionScreen(
+                    viewModel = vm,
+                    authPreferences = container.authPreferences,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) }
                 )
             }
 
@@ -417,7 +432,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
                     onDeleted = { navController.popBackStack() },
-                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) }
+                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 
@@ -502,7 +518,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                         navController.navigate(Routes.quotePreview(savedId)) {
                             popUpTo(Routes.CREATE_QUOTE_PATTERN) { inclusive = true }
                         }
-                    }
+                    },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 
@@ -539,7 +556,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                         navController.navigate(Routes.invoicePreview(invoiceId))
                     },
                     onDeleted = { navController.popBackStack() },
-                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) }
+                    onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 
@@ -557,7 +575,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     viewModel = vm,
                     isEditing = customerId != null,
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 
@@ -589,7 +608,8 @@ fun QuickQuoteNavHost(container: AppContainer) {
                         navController.navigate(Routes.invoicePreview(savedId)) {
                             popUpTo(Routes.CREATE_INVOICE_PATTERN) { inclusive = true }
                         }
-                    }
+                    },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 

@@ -67,6 +67,7 @@ fun SettingsScreen(
     onEditBusinessProfile: () -> Unit,
     onSetupPin: () -> Unit,
     onOpenAccount: () -> Unit,
+    onOpenSubscription: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -327,6 +328,12 @@ fun SettingsScreen(
                     }
                     SubscriptionStateChip(subscriptionState)
                 }
+                Divider(color = MaterialTheme.colorScheme.outline)
+                SettingsRow(
+                    title = "Subscription",
+                    subtitle = "View plans and pay via EFT",
+                    onClick = onOpenSubscription
+                )
             } else {
                 SettingsRow(
                     title = "Account",

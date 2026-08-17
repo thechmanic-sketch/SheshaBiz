@@ -58,7 +58,8 @@ fun ProductEditScreen(
     onBack: () -> Unit,
     onSaved: (Long) -> Unit,
     onDeleted: () -> Unit,
-    onNeedsPinSetup: () -> Unit
+    onNeedsPinSetup: () -> Unit,
+    onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -197,7 +198,7 @@ fun ProductEditScreen(
     }
 
     if (state.lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = state.lockedMessage!!)
     }
 }
 

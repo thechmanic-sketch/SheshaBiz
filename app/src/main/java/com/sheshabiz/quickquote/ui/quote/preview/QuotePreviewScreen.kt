@@ -75,7 +75,8 @@ fun QuotePreviewScreen(
     onDuplicated: (Long) -> Unit,
     onConvertedToInvoice: (Long) -> Unit,
     onDeleted: () -> Unit,
-    onNeedsPinSetup: () -> Unit
+    onNeedsPinSetup: () -> Unit,
+    onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val deleted by viewModel.deleted.collectAsState()
@@ -265,7 +266,7 @@ fun QuotePreviewScreen(
     }
 
     if (lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = lockedMessage!!)
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = lockedMessage!!)
     }
 }
 

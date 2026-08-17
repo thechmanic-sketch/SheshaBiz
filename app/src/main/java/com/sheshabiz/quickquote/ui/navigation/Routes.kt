@@ -18,6 +18,7 @@ object Routes {
     const val APP_LOCK = "app_lock"
     const val PIN_SETUP = "pin_setup"
     const val ACCOUNT_LOGIN = "account_login"
+    const val SUBSCRIPTION = "subscription"
 
     const val CREATE_QUOTE = "quote_edit"
     const val QUOTE_ARG = "quoteId"

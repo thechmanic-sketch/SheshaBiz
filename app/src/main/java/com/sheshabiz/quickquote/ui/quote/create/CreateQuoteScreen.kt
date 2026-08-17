@@ -60,7 +60,8 @@ fun CreateQuoteScreen(
     productRepository: ProductRepository,
     isEditing: Boolean,
     onBack: () -> Unit,
-    onSaved: (Long) -> Unit
+    onSaved: (Long) -> Unit,
+    onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val customers by customerRepository.observeAll().collectAsState(initial = emptyList<Customer>())
@@ -267,7 +268,7 @@ fun CreateQuoteScreen(
     }
 
     if (state.lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = state.lockedMessage!!)
     }
 }
 

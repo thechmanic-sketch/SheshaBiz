@@ -26,7 +26,8 @@ fun CustomerEditScreen(
     viewModel: CustomerEditViewModel,
     isEditing: Boolean,
     onBack: () -> Unit,
-    onSaved: (Long) -> Unit
+    onSaved: (Long) -> Unit,
+    onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -91,6 +92,6 @@ fun CustomerEditScreen(
     }
 
     if (state.lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, message = state.lockedMessage!!)
+        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = state.lockedMessage!!)
     }
 }
