@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut, RefreshCw } from "lucide-react";
+import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut, RefreshCw, CreditCard, LayoutDashboard } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { PinSetupModal } from "@/components/settings/PinSetupModal";
@@ -341,6 +341,42 @@ export default function SettingsPage() {
             </p>
           )}
         </Card>
+
+        {isLoggedIn && (
+          <Card title="Subscription">
+            <p className="text-sm text-ink-soft">
+              {subscriptionState === "lapsed"
+                ? "Your trial has ended. Pick a plan to keep using SheshaBiz."
+                : "Upgrade any time — pick a plan, pay by EFT, and let us know on WhatsApp."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/subscribe"
+                className="flex items-center gap-1.5 rounded-xl bg-brand px-3.5 py-2 text-sm font-semibold text-white"
+              >
+                <CreditCard size={15} />
+                {subscriptionState === "lapsed" ? "Subscribe now" : "View plans / Upgrade"}
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {email === "thechmanic@gmail.com" && (
+          <Card title="Admin">
+            <p className="text-sm text-ink-soft">
+              You&apos;re logged in as the SheshaBiz admin account.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/admin"
+                className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+              >
+                <LayoutDashboard size={15} />
+                Control dashboard
+              </Link>
+            </div>
+          </Card>
+        )}
 
         <Card title="Data">
           <p className="text-sm text-ink-soft">

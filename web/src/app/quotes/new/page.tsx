@@ -20,7 +20,13 @@ export default function NewQuotePage() {
     return (
       <div className="mx-auto max-w-md py-16 text-center">
         <p className="text-ink-soft">{TRIAL_LOCK_MESSAGE}</p>
-        <Link href="/quotes" className="mt-3 inline-block font-semibold text-brand-deep">
+        <Link
+          href="/subscribe"
+          className="mt-4 inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
+        >
+          Subscribe now
+        </Link>
+        <Link href="/quotes" className="mt-3 block font-semibold text-brand-deep">
           Back to Quotes
         </Link>
       </div>

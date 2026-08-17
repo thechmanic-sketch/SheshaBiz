@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useAuth } from "./auth";
 
 export const TRIAL_LOCK_MESSAGE =
@@ -47,14 +48,21 @@ export function TrialGateProvider({ children }: { children: ReactNode }) {
           <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-5 shadow-xl">
             <h2 className="text-base font-bold">Trial ended</h2>
             <p className="mt-2 text-sm text-ink-soft">{TRIAL_LOCK_MESSAGE}</p>
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setNoticeOpen(false)}
-                className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
               >
                 Got it
               </button>
+              <Link
+                href="/subscribe"
+                onClick={() => setNoticeOpen(false)}
+                className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
+              >
+                Subscribe now
+              </Link>
             </div>
           </div>
         </div>

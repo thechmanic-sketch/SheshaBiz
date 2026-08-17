@@ -146,9 +146,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 flex-col min-w-0">
         {showLapsedBanner && (
-          <div className="flex items-center gap-2.5 bg-error px-4 py-2.5 text-sm font-medium text-white no-print sm:px-6">
-            <AlertTriangle size={16} className="shrink-0" />
-            <span>{TRIAL_LOCK_MESSAGE}</span>
+          <div className="flex items-center justify-between gap-2.5 bg-error px-4 py-2.5 text-sm font-medium text-white no-print sm:px-6">
+            <span className="flex items-center gap-2.5">
+              <AlertTriangle size={16} className="shrink-0" />
+              {TRIAL_LOCK_MESSAGE}
+            </span>
+            <Link
+              href="/subscribe"
+              className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold hover:bg-white/25"
+            >
+              Subscribe now
+            </Link>
           </div>
         )}
         {!showLapsedBanner && showSoonBanner && trialDaysLeft !== null && (
