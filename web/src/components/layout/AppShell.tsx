@@ -19,6 +19,7 @@ import {
   X,
   AlertTriangle,
   Clock,
+  UserPlus,
 } from "lucide-react";
 import { useAppData } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
@@ -74,7 +75,14 @@ const navItems: NavItem[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data, loaded } = useAppData();
-  const { isLoggedIn, subscriptionState, trialStartedAt, bootstrapBusiness, refreshStatus } = useAuth();
+  const {
+    isLoggedIn,
+    subscriptionState,
+    trialStartedAt,
+    bootstrapBusiness,
+    refreshStatus,
+    loaded: authLoaded,
+  } = useAuth();
   // Mounted unconditionally (before the `!loaded`/`!onboarded` early
   // returns below) so its hook order never changes between renders. It
   // no-ops internally whenever `isLoggedIn` is false.
@@ -112,6 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     trialDaysLeft < SOON_THRESHOLD_DAYS &&
     !trialBannerDismissed;
   const showLapsedBanner = isLoggedIn && subscriptionState === "lapsed";
+  const showLoggedOutBanner = authLoaded && !isLoggedIn;
 
   return (
     <div className="flex min-h-screen">
@@ -159,7 +168,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
         )}
-        {!showLapsedBanner && showSoonBanner && trialDaysLeft !== null && (
+        {!showLapsedBanner && showLoggedOutBanner && (
+          <div className="flex items-center justify-between gap-2.5 bg-brand-tint px-4 py-2.5 text-sm font-medium text-brand-deep no-print sm:px-6">
+            <span className="flex items-center gap-2.5">
+              <UserPlus size={16} className="shrink-0" />
+              You&apos;re using SheshaBiz without an account — sign up for a free 7-day trial to save your
+              work to the cloud and keep creating.
+            </span>
+            <Link
+              href="/auth"
+              className="shrink-0 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-deep"
+            >
+              Sign up
+            </Link>
+          </div>
+        )}
+        {!showLapsedBanner && !showLoggedOutBanner && showSoonBanner && trialDaysLeft !== null && (
           <div className="flex items-center justify-between gap-2.5 bg-brand-tint px-4 py-2.5 text-sm font-medium text-brand-deep no-print sm:px-6">
             <span className="flex items-center gap-2.5">
               <Clock size={16} className="shrink-0" />

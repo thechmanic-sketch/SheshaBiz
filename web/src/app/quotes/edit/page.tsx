@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { QuoteForm, type QuoteFormValues } from "@/components/quotes/QuoteForm";
 import { useAppData } from "@/lib/store";
-import { TRIAL_LOCK_MESSAGE, useTrialGate } from "@/lib/trial";
+import { SIGN_UP_LOCK_MESSAGE, TRIAL_LOCK_MESSAGE, useTrialGate } from "@/lib/trial";
 
 function EditQuoteInner() {
   const router = useRouter();
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const { data, updateQuote } = useAppData();
-  const { locked } = useTrialGate();
+  const { lockReason } = useTrialGate();
   const quote = data.quotes.find((q) => q.id === id);
 
   if (!quote) {
@@ -26,15 +26,16 @@ function EditQuoteInner() {
     );
   }
 
-  if (locked) {
+  if (lockReason) {
+    const isLoggedOut = lockReason === "needs-login";
     return (
       <div className="mx-auto max-w-md py-16 text-center">
-        <p className="text-ink-soft">{TRIAL_LOCK_MESSAGE}</p>
+        <p className="text-ink-soft">{isLoggedOut ? SIGN_UP_LOCK_MESSAGE : TRIAL_LOCK_MESSAGE}</p>
         <Link
-          href="/subscribe"
+          href={isLoggedOut ? "/auth" : "/subscribe"}
           className="mt-4 inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
         >
-          Subscribe now
+          {isLoggedOut ? "Sign up" : "Subscribe now"}
         </Link>
         <Link href={`/quotes/view?id=${quote.id}`} className="mt-3 block font-semibold text-brand-deep">
           Back to {quote.number}
