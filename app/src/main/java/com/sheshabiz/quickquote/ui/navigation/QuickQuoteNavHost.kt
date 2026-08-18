@@ -339,9 +339,20 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
             }
 
-            composable(Routes.SUBSCRIPTION) {
+            composable(
+                route = Routes.SUBSCRIPTION_PATTERN,
+                arguments = listOf(
+                    navArgument(Routes.SUBSCRIPTION_PLAN_ARG) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { entry ->
+                val planIdArg = entry.arguments?.getString(Routes.SUBSCRIPTION_PLAN_ARG)
                 val vm = viewModel<SubscriptionViewModel>(
-                    factory = viewModelFactory { SubscriptionViewModel(container.businessRepository) }
+                    key = "subscription_${planIdArg ?: "none"}",
+                    factory = viewModelFactory { SubscriptionViewModel(container.businessRepository, planIdArg) }
                 )
                 SubscriptionScreen(
                     viewModel = vm,
@@ -363,7 +374,17 @@ fun QuickQuoteNavHost(container: AppContainer) {
                 )
                 AuthScreen(
                     viewModel = vm,
-                    onDone = { navController.popBackStack() },
+                    onDone = { chosenPlan ->
+                        // Always return to wherever the user came from first — same as the
+                        // original trial-only behavior — then, if they picked a paid plan on
+                        // the "how would you like to start?" step, push them straight to that
+                        // plan's PAY_CONFIRM step instead of leaving them to discover
+                        // Settings -> Subscription on their own later.
+                        navController.popBackStack()
+                        if (chosenPlan != null) {
+                            navController.navigate(Routes.subscription(chosenPlan.name))
+                        }
+                    },
                     onBack = { navController.popBackStack() }
                 )
             }

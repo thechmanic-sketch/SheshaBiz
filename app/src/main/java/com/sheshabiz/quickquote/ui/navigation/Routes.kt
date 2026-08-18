@@ -18,7 +18,15 @@ object Routes {
     const val APP_LOCK = "app_lock"
     const val PIN_SETUP = "pin_setup"
     const val ACCOUNT_LOGIN = "account_login"
+
     const val SUBSCRIPTION = "subscription"
+    const val SUBSCRIPTION_PLAN_ARG = "planId"
+    /** [planId] is a [com.sheshabiz.quickquote.ui.subscription.SubscriptionPlan.name], letting
+     * callers (e.g. signup) send the user straight to the PAY_CONFIRM step for a plan they
+     * already picked, instead of making them pick it again on the plan-picker step. */
+    fun subscription(planId: String? = null) =
+        if (planId == null) SUBSCRIPTION else "$SUBSCRIPTION?$SUBSCRIPTION_PLAN_ARG=$planId"
+    const val SUBSCRIPTION_PATTERN = "$SUBSCRIPTION?$SUBSCRIPTION_PLAN_ARG={$SUBSCRIPTION_PLAN_ARG}"
 
     const val CREATE_QUOTE = "quote_edit"
     const val QUOTE_ARG = "quoteId"

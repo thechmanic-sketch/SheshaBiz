@@ -30,10 +30,19 @@ data class SubscriptionUiState(
 )
 
 class SubscriptionViewModel(
-    private val businessRepository: BusinessRepository
+    private val businessRepository: BusinessRepository,
+    /** [SubscriptionPlan.name] of a plan already chosen elsewhere (e.g. on the signup
+     * "how would you like to start?" step) — when present and valid, the screen opens straight
+     * on [SubscriptionStep.PAY_CONFIRM] for that plan instead of making the user pick again. */
+    preselectedPlanId: String? = null
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SubscriptionUiState())
+    private val _uiState = MutableStateFlow(
+        preselectedPlanId
+            ?.let { id -> runCatching { SubscriptionPlan.valueOf(id) }.getOrNull() }
+            ?.let { plan -> SubscriptionUiState(step = SubscriptionStep.PAY_CONFIRM, selectedPlan = plan) }
+            ?: SubscriptionUiState()
+    )
     val uiState: StateFlow<SubscriptionUiState> = _uiState
 
     init {
