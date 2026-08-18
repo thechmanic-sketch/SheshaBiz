@@ -61,6 +61,7 @@ fun CreateInvoiceScreen(
     isEditing: Boolean,
     onBack: () -> Unit,
     onSaved: (Long) -> Unit,
+    onNeedsLogin: () -> Unit,
     onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -267,8 +268,13 @@ fun CreateInvoiceScreen(
         )
     }
 
-    if (state.lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = state.lockedMessage!!)
+    state.lockedReason?.let { reason ->
+        TrialLockedDialog(
+            reason = reason,
+            onDismiss = viewModel::clearLockedReason,
+            onNavigateToLogin = onNeedsLogin,
+            onNavigateToSubscription = onNeedsSubscription
+        )
     }
 }
 

@@ -76,13 +76,14 @@ fun QuotePreviewScreen(
     onConvertedToInvoice: (Long) -> Unit,
     onDeleted: () -> Unit,
     onNeedsPinSetup: () -> Unit,
+    onNeedsLogin: () -> Unit,
     onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val deleted by viewModel.deleted.collectAsState()
     val duplicatedId by viewModel.duplicatedId.collectAsState()
     val convertedInvoiceId by viewModel.convertedInvoiceId.collectAsState()
-    val lockedMessage by viewModel.lockedMessage.collectAsState()
+    val lockedReason by viewModel.lockedReason.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -265,8 +266,13 @@ fun QuotePreviewScreen(
         )
     }
 
-    if (lockedMessage != null) {
-        TrialLockedDialog(onDismiss = viewModel::clearLockedMessage, onSubscribe = onNeedsSubscription, message = lockedMessage!!)
+    lockedReason?.let { reason ->
+        TrialLockedDialog(
+            reason = reason,
+            onDismiss = viewModel::clearLockedReason,
+            onNavigateToLogin = onNeedsLogin,
+            onNavigateToSubscription = onNeedsSubscription
+        )
     }
 }
 

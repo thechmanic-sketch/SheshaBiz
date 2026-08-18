@@ -24,7 +24,7 @@ data class CustomerEditUiState(
     val emailError: String? = null,
     val isSaving: Boolean = false,
     val savedCustomerId: Long? = null,
-    val lockedMessage: String? = null
+    val lockedReason: TrialGate.LockReason? = null
 )
 
 class CustomerEditViewModel(
@@ -60,11 +60,12 @@ class CustomerEditViewModel(
     fun onEmailChange(v: String) = _uiState.update { it.copy(email = v, emailError = null) }
     fun onAddressChange(v: String) = _uiState.update { it.copy(address = v) }
 
-    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+    fun clearLockedReason() = _uiState.update { it.copy(lockedReason = null) }
 
     fun save() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _uiState.update { it.copy(lockedReason = lockReason) }
             return
         }
 

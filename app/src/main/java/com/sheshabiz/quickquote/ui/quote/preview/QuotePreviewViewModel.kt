@@ -57,9 +57,9 @@ class QuotePreviewViewModel(
     private val _convertedInvoiceId = MutableStateFlow<Long?>(null)
     val convertedInvoiceId: StateFlow<Long?> = _convertedInvoiceId
 
-    private val _lockedMessage = MutableStateFlow<String?>(null)
-    val lockedMessage: StateFlow<String?> = _lockedMessage
-    fun clearLockedMessage() { _lockedMessage.value = null }
+    private val _lockedReason = MutableStateFlow<TrialGate.LockReason?>(null)
+    val lockedReason: StateFlow<TrialGate.LockReason?> = _lockedReason
+    fun clearLockedReason() { _lockedReason.value = null }
 
     suspend fun generatePdfFile(): File? {
         val state = uiState.value
@@ -86,8 +86,9 @@ class QuotePreviewViewModel(
     }
 
     fun duplicateQuote() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _lockedMessage.value = TrialGate.LOCKED_MESSAGE
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _lockedReason.value = lockReason
             return
         }
         viewModelScope.launch {
@@ -109,8 +110,9 @@ class QuotePreviewViewModel(
     }
 
     fun convertToInvoice() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _lockedMessage.value = TrialGate.LOCKED_MESSAGE
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _lockedReason.value = lockReason
             return
         }
         viewModelScope.launch {

@@ -33,8 +33,10 @@ class AuthPreferences(context: Context) {
     val loggedInEmail: StateFlow<String?> = _loggedInEmail
 
     private val _subscriptionState = MutableStateFlow(readSubscriptionState())
-    /** [SubscriptionState.LOGGED_OUT] for anyone who has never logged in — the trial gate
-     * only ever blocks on [SubscriptionState.LAPSED], so a logged-out user is never gated. */
+    /** [SubscriptionState.LOGGED_OUT] for anyone who has never logged in. See
+     * [com.sheshabiz.quickquote.domain.TrialGate], which blocks create/edit on both
+     * [SubscriptionState.LOGGED_OUT] (never started a trial) and [SubscriptionState.LAPSED]
+     * (trial ended, unpaid) — each with its own message and destination. */
     val subscriptionState: StateFlow<SubscriptionState> = _subscriptionState
 
     private val _businessId = MutableStateFlow(prefs.getString(KEY_BUSINESS_ID, null))
@@ -53,8 +55,8 @@ class AuthPreferences(context: Context) {
      * Deliberately leaves any cached subscription/business fields alone — a re-login to the
      * same email should keep showing the last-known trial state until the sync pass that
      * [com.sheshabiz.quickquote.ui.auth.AuthViewModel] fires right after login corrects it
-     * (or, for a brand-new login, [subscriptionState] is already [SubscriptionState.LOGGED_OUT],
-     * which never gates anything on its own). */
+     * (a brand-new login's [subscriptionState] briefly stays [SubscriptionState.LOGGED_OUT]
+     * until that sync pass lands and starts the trial via `bootstrap_business()`). */
     fun saveSession(email: String, session: AuthSession) {
         prefs.edit()
             .putString(KEY_EMAIL, email)

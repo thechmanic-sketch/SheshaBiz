@@ -6,22 +6,51 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.sheshabiz.quickquote.domain.TrialGate
 
-/** Shown wherever a "create new" / "edit" action is blocked because the account's trial has
- * lapsed. Every gated ViewModel exposes the message via its own uiState (rather than a
- * boolean flag) so this can be driven directly by `if (state.lockedMessage != null) { ... }`
- * at each call site. [onSubscribe] sends the user to the in-app subscription screen so the
- * lock leads somewhere actionable instead of a dead end. */
+/** Shown wherever a "create new" / "edit" action is blocked by [TrialGate]. There are two
+ * distinct reasons a user can land here — see [TrialGate.LockReason] — and they are NOT the
+ * same problem: a never-logged-in user hasn't started their trial yet, while a lapsed user has
+ * used up their trial. Each gets its own title/body/button/destination so the dialog always
+ * leads somewhere actionable instead of a dead end. Every gated ViewModel exposes the reason
+ * via its own uiState (rather than a boolean flag) so this can be driven directly by
+ * `state.lockedReason?.let { ... }` at each call site. */
 @Composable
-fun TrialLockedDialog(onDismiss: () -> Unit, onSubscribe: () -> Unit, message: String = TrialGate.LOCKED_MESSAGE) {
+fun TrialLockedDialog(
+    reason: TrialGate.LockReason,
+    onDismiss: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onNavigateToSubscription: () -> Unit
+) {
+    val (title, message, confirmLabel, onConfirm) = when (reason) {
+        TrialGate.LockReason.LOGGED_OUT -> DialogContent(
+            title = "Start your free trial",
+            message = TrialGate.LOGGED_OUT_MESSAGE,
+            confirmLabel = "Sign up",
+            onConfirm = onNavigateToLogin
+        )
+        TrialGate.LockReason.LAPSED -> DialogContent(
+            title = "Trial ended",
+            message = TrialGate.LAPSED_MESSAGE,
+            confirmLabel = "Subscribe",
+            onConfirm = onNavigateToSubscription
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Trial ended") },
+        title = { Text(title) },
         text = { Text(message) },
         confirmButton = {
-            TextButton(onClick = onSubscribe) { Text("Subscribe") }
+            TextButton(onClick = onConfirm) { Text(confirmLabel) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("OK") }
         }
     )
 }
+
+private data class DialogContent(
+    val title: String,
+    val message: String,
+    val confirmLabel: String,
+    val onConfirm: () -> Unit
+)

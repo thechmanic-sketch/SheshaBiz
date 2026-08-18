@@ -80,6 +80,10 @@ class TillViewModel(
     )
     val uiState: StateFlow<TillUiState> = _uiState
 
+    private val _lockedReason = MutableStateFlow<TrialGate.LockReason?>(null)
+    val lockedReason: StateFlow<TrialGate.LockReason?> = _lockedReason
+    fun clearLockedReason() { _lockedReason.value = null }
+
     init {
         viewModelScope.launch {
             productRepository.observeAll().collect { products ->
@@ -169,8 +173,9 @@ class TillViewModel(
     fun dismissError() = _uiState.update { it.copy(error = null) }
 
     fun completeSale() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _uiState.update { it.copy(error = TrialGate.LOCKED_MESSAGE) }
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _lockedReason.value = lockReason
             return
         }
 

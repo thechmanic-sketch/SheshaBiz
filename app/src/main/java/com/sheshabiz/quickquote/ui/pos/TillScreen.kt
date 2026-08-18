@@ -48,15 +48,19 @@ import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
 import com.sheshabiz.quickquote.ui.common.QQTextField
 import com.sheshabiz.quickquote.ui.common.ScreenTitleHeader
+import com.sheshabiz.quickquote.ui.common.TrialLockedDialog
 import com.sheshabiz.quickquote.ui.customers.CustomerPickerSheet
 
 @Composable
 fun TillScreen(
     viewModel: TillViewModel,
     customerRepository: CustomerRepository,
-    onSaleCompleted: (Long) -> Unit
+    onSaleCompleted: (Long) -> Unit,
+    onNeedsLogin: () -> Unit,
+    onNeedsSubscription: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val lockedReason by viewModel.lockedReason.collectAsState()
     val customers by customerRepository.observeAll().collectAsState(initial = emptyList<Customer>())
     var showCustomerPicker by remember { mutableStateOf(false) }
     var showCustomItemDialog by remember { mutableStateOf(false) }
@@ -203,6 +207,15 @@ fun TillScreen(
                 viewModel.addCustomItem(description, qty, price)
                 showCustomItemDialog = false
             }
+        )
+    }
+
+    lockedReason?.let { reason ->
+        TrialLockedDialog(
+            reason = reason,
+            onDismiss = viewModel::clearLockedReason,
+            onNavigateToLogin = onNeedsLogin,
+            onNavigateToSubscription = onNeedsSubscription
         )
     }
 }

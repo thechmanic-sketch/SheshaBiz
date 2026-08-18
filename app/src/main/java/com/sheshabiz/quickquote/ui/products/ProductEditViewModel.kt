@@ -30,7 +30,7 @@ data class ProductEditUiState(
     val isDeleting: Boolean = false,
     val savedProductId: Long? = null,
     val deleted: Boolean = false,
-    val lockedMessage: String? = null
+    val lockedReason: TrialGate.LockReason? = null
 )
 
 class ProductEditViewModel(
@@ -86,11 +86,12 @@ class ProductEditViewModel(
     fun onStockQuantityChange(v: String) = _uiState.update { it.copy(stockQuantityText = v, stockError = null) }
     fun onLowStockThresholdChange(v: String) = _uiState.update { it.copy(lowStockThresholdText = v) }
 
-    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+    fun clearLockedReason() = _uiState.update { it.copy(lockedReason = null) }
 
     fun save() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _uiState.update { it.copy(lockedReason = lockReason) }
             return
         }
 

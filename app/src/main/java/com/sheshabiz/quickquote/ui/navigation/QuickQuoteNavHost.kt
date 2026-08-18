@@ -433,6 +433,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     onSaved = { navController.popBackStack() },
                     onDeleted = { navController.popBackStack() },
                     onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
                     onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
@@ -453,7 +454,9 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     customerRepository = container.customerRepository,
                     onSaleCompleted = { saleId ->
                         navController.navigate(Routes.salePreview(saleId))
-                    }
+                    },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
+                    onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
 
@@ -519,6 +522,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             popUpTo(Routes.CREATE_QUOTE_PATTERN) { inclusive = true }
                         }
                     },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
                     onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
@@ -557,6 +561,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     },
                     onDeleted = { navController.popBackStack() },
                     onNeedsPinSetup = { navController.navigate(Routes.PIN_SETUP) },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
                     onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
@@ -576,6 +581,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                     isEditing = customerId != null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
                     onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }
@@ -609,6 +615,7 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             popUpTo(Routes.CREATE_INVOICE_PATTERN) { inclusive = true }
                         }
                     },
+                    onNeedsLogin = { navController.navigate(Routes.ACCOUNT_LOGIN) },
                     onNeedsSubscription = { navController.navigate(Routes.SUBSCRIPTION) }
                 )
             }

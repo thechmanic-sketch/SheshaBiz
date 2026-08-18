@@ -62,7 +62,7 @@ data class CreateQuoteUiState(
     val isSaving: Boolean = false,
     val isLoading: Boolean = false,
     val savedQuoteId: Long? = null,
-    val lockedMessage: String? = null
+    val lockedReason: TrialGate.LockReason? = null
 ) {
     val totals: QuoteTotals
         get() = QuoteCalculator.calculate(
@@ -203,11 +203,12 @@ class CreateQuoteViewModel(
     fun onNotesChange(value: String) = _uiState.update { it.copy(notes = value) }
     fun onPaymentTermsChange(value: String) = _uiState.update { it.copy(paymentTerms = value) }
 
-    fun clearLockedMessage() = _uiState.update { it.copy(lockedMessage = null) }
+    fun clearLockedReason() = _uiState.update { it.copy(lockedReason = null) }
 
     fun save() {
-        if (TrialGate.isLocked(authPreferences)) {
-            _uiState.update { it.copy(lockedMessage = TrialGate.LOCKED_MESSAGE) }
+        val lockReason = TrialGate.lockReason(authPreferences)
+        if (lockReason != null) {
+            _uiState.update { it.copy(lockedReason = lockReason) }
             return
         }
 
