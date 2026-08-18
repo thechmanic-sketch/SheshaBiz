@@ -39,10 +39,10 @@ function CopyableField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function SubscribePanel() {
+export function SubscribePanel({ initialPlan = null }: { initialPlan?: PlanTierId | null }) {
   const { data } = useAppData();
   const { email } = useAuth();
-  const [selected, setSelected] = useState<PlanTierId | null>(null);
+  const [selected, setSelected] = useState<PlanTierId | null>(initialPlan);
 
   const businessName = data.business.name || "your business";
   const plan = PLAN_TIERS.find((p) => p.id === selected) ?? null;
