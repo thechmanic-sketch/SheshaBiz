@@ -98,8 +98,15 @@
   <div class="card" id="emailStep">
     <label for="emailInput">Email</label>
     <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+
+    <div style="margin-top:14px">
+      <label for="passwordInput">Password (if you've set one)</label>
+      <input id="passwordInput" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
     <div class="row" style="margin-top:12px">
-      <button class="primary" id="sendCodeBtn">Send code</button>
+      <button class="primary" id="passwordSignInBtn">Sign in with password</button>
+      <button class="ghost" id="sendCodeBtn">Or email me a code instead</button>
     </div>
     <div id="emailMsg"></div>
   </div>
@@ -279,6 +286,26 @@ async function checkSession() {
   show(dashboard);
   await loadBusinesses();
 }
+
+el("passwordSignInBtn").addEventListener("click", async () => {
+  const email = el("emailInput").value.trim();
+  const password = el("passwordInput").value;
+  if (!email || !password) { setMsg(el("emailMsg"), "Enter your email and password.", "error"); return; }
+  el("passwordSignInBtn").disabled = true;
+  setMsg(el("emailMsg"), "", "");
+  const { ok, data } = await authFetch("/token?grant_type=password", { email, password });
+  el("passwordSignInBtn").disabled = false;
+  if (!ok || !data.access_token) {
+    setMsg(el("emailMsg"), data.error_description || data.msg || "That email/password combination isn't right.", "error");
+    return;
+  }
+  setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    email: (data.user && data.user.email) || email,
+  });
+  await checkSession();
+});
 
 el("sendCodeBtn").addEventListener("click", async () => {
   const email = el("emailInput").value.trim();
