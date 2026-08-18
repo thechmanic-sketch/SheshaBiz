@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,11 +33,11 @@ import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.subscription.SubscriptionPlan
 
 /**
- * Single-screen login: pick how to start (free trial or a paid plan), then email entry
- * (with an instant email+password alternative for returning users, see [AuthViewModel.
- * togglePasswordLogin]), then OTP code entry, then an optional set-a-password step — all
- * switching in place (no separate nav route per step, mirroring
- * [com.sheshabiz.quickquote.ui.lock.PinSetupScreen]).
+ * Single-screen login: pick how to start (free trial or a paid plan), then email+password entry
+ * — account creation by default, or login mode for returning users (see [AuthViewModel.
+ * toggleReturningUser]) — with OTP code entry and an optional set-a-password step reachable only
+ * as an explicit fallback for legacy no-password accounts, all switching in place (no separate
+ * nav route per step, mirroring [com.sheshabiz.quickquote.ui.lock.PinSetupScreen]).
  *
  * This is login only. It never syncs, pushes, or pulls any business data — a successful
  * verification only stores a session via [com.sheshabiz.quickquote.data.prefs.AuthPreferences].
@@ -153,14 +154,17 @@ private fun StartOptionCard(
 @Composable
 private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
     Text(
-        text = "Log in or create an account",
+        text = if (state.isReturningUser) "Log in" else "Create your account",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold
     )
     Spacer(Modifier.height(4.dp))
     Text(
-        text = "Create an account to secure future access to SheshaBiz — for example, if you reinstall the app. " +
-            "This does not sync or back up your data.",
+        text = if (state.isReturningUser) {
+            "Enter your email and password."
+        } else {
+            "Set a password so you're always signed in — even after reinstalling or switching devices."
+        },
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
@@ -176,18 +180,16 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
     )
     Spacer(Modifier.height(16.dp))
 
-    if (state.showPasswordLogin) {
-        QQTextField(
-            value = state.password,
-            onValueChange = viewModel::onPasswordChange,
-            label = "Password",
-            keyboardType = KeyboardType.Password,
-            isError = state.passwordError != null,
-            errorText = state.passwordError,
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(Modifier.height(16.dp))
-    }
+    QQTextField(
+        value = state.password,
+        onValueChange = viewModel::onPasswordChange,
+        label = "Password",
+        keyboardType = KeyboardType.Password,
+        isError = state.passwordError != null,
+        errorText = state.passwordError,
+        visualTransformation = PasswordVisualTransformation()
+    )
+    Spacer(Modifier.height(16.dp))
 
     if (state.errorMessage != null) {
         Text(
@@ -198,22 +200,30 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
         Spacer(Modifier.height(12.dp))
     }
 
-    if (state.showPasswordLogin) {
+    if (state.isReturningUser) {
         QQPrimaryButton(
             text = "Log in",
             onClick = viewModel::loginWithPassword,
             loading = state.isPasswordLoggingIn
         )
         Spacer(Modifier.height(8.dp))
-        QQTextActionButton(text = "Use a code instead", onClick = viewModel::togglePasswordLogin)
+        QQTextActionButton(text = "New here? Create an account", onClick = viewModel::toggleReturningUser)
+        Spacer(Modifier.height(4.dp))
+        TextButton(onClick = viewModel::sendCode) {
+            Text(
+                text = "Forgot your password? Log in with a code instead",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     } else {
         QQPrimaryButton(
-            text = "Send code",
-            onClick = viewModel::sendCode,
-            loading = state.isSendingCode
+            text = "Create account",
+            onClick = viewModel::createAccount,
+            loading = state.isCreatingAccount
         )
         Spacer(Modifier.height(8.dp))
-        QQTextActionButton(text = "Already have a password? Log in instantly", onClick = viewModel::togglePasswordLogin)
+        QQTextActionButton(text = "Already have an account? Log in", onClick = viewModel::toggleReturningUser)
     }
 }
 

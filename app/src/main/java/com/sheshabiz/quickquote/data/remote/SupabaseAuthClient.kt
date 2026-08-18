@@ -90,6 +90,42 @@ object SupabaseAuthClient {
         }
     }
 
+    /** Creates a brand-new account with email + password — the primary signup path now that
+     * "Confirm email" is off in the Supabase dashboard, so this sends zero email and returns a
+     * usable session immediately. Supabase's anti-enumeration behavior means an email that's
+     * already registered comes back as a 2xx with no access_token rather than an error, so that
+     * case is surfaced as a distinct [Result.failure] (message == "ACCOUNT_EXISTS") for the
+     * caller to pattern-match on instead of showing it to the user directly. */
+    suspend fun signUp(email: String, password: String): Result<AuthSession> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("email", email)
+                put("password", password)
+            }
+            val (statusCode, responseText) = postJson("$SUPABASE_URL/auth/v1/signup", body.toString())
+            if (statusCode in 200..299) {
+                val json = JSONObject(responseText)
+                val accessToken = json.optString("access_token", "")
+                val refreshToken = json.optString("refresh_token", "")
+                val expiresIn = json.optLong("expires_in", 3600L)
+                if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
+                    Result.success(AuthSession(accessToken, refreshToken, expiresIn))
+                } else {
+                    // Email already registered: Supabase returns 200 with a user object
+                    // (empty `identities`, no session) instead of an error, to avoid leaking
+                    // which emails exist.
+                    Result.failure(Exception("ACCOUNT_EXISTS"))
+                }
+            } else {
+                Result.failure(Exception(extractErrorMessage(responseText) ?: "Couldn't create the account. Please try again."))
+            }
+        } catch (e: IOException) {
+            Result.failure(Exception("Couldn't reach the server. Check your connection and try again."))
+        } catch (e: Exception) {
+            Result.failure(Exception("Couldn't create the account. Please try again."))
+        }
+    }
+
     /** Signs in with email + password — the fast path for a returning user who already set a
      * password via [setPassword], skipping the OTP email entirely. */
     suspend fun signInWithPassword(email: String, password: String): Result<AuthSession> = withContext(Dispatchers.IO) {

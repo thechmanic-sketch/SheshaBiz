@@ -31,12 +31,17 @@ data class AuthUiState(
     val errorMessage: String? = null,
     val infoMessage: String? = null,
     val loggedIn: Boolean = false,
-    /** Password-login fields, used on the [AuthStep.EMAIL] step as a faster alternative to
-     * the OTP flow above — see [AuthViewModel.loginWithPassword]. */
+    /** Email+password fields on the [AuthStep.EMAIL] step. [isReturningUser] selects which mode
+     * that step is in: false (the default) is "Create account" — the primary, zero-email signup
+     * path via [AuthViewModel.createAccount]; true is "Log in" for a returning user with a
+     * password already set, via [AuthViewModel.loginWithPassword]. OTP ([sendCode]/[verifyCode])
+     * is reachable only as an explicit fallback from login mode, for legacy accounts that predate
+     * password support. */
     val password: String = "",
     val passwordError: String? = null,
-    val showPasswordLogin: Boolean = false,
+    val isReturningUser: Boolean = false,
     val isPasswordLoggingIn: Boolean = false,
+    val isCreatingAccount: Boolean = false,
     /** New-password fields, used on the [AuthStep.SET_PASSWORD] step right after a first-ever
      * OTP verification — see [AuthViewModel.savePassword]. */
     val newPassword: String = "",
@@ -45,9 +50,11 @@ data class AuthUiState(
 )
 
 /**
- * Drives the login-only email-OTP flow. Success persists tokens via [AuthPreferences] and
- * fires an immediate cross-device sync pass in the background — otherwise nothing here
- * touches the Room database or any Quote/Invoice/Customer/Product/Sale data directly.
+ * Drives account creation and login. Email+password is the primary path (zero email sent);
+ * email-OTP remains only as a fallback for legacy accounts with no password set yet. Success
+ * persists tokens via [AuthPreferences] and fires an immediate cross-device sync pass in the
+ * background — otherwise nothing here touches the Room database or any
+ * Quote/Invoice/Customer/Product/Sale data directly.
  */
 class AuthViewModel(
     private val authClient: SupabaseAuthClient,
@@ -147,14 +154,60 @@ class AuthViewModel(
         }
     }
 
-    /** Shows/hides the password field on the [AuthStep.EMAIL] step, toggling between the
-     * OTP flow and the instant password-login flow. */
-    fun togglePasswordLogin() {
-        _uiState.update { it.copy(showPasswordLogin = !it.showPasswordLogin, errorMessage = null, passwordError = null) }
+    /** Switches the [AuthStep.EMAIL] step between "Create account" (the default) and "Log in"
+     * mode — see [AuthUiState.isReturningUser]. */
+    fun toggleReturningUser() {
+        _uiState.update { it.copy(isReturningUser = !it.isReturningUser, errorMessage = null, passwordError = null) }
     }
 
     fun onPasswordChange(value: String) {
         _uiState.update { it.copy(password = value, passwordError = null, errorMessage = null) }
+    }
+
+    /** Creates a brand-new account with email + password — the primary signup path. Sends zero
+     * email (Supabase's "Confirm email" is off) and, unlike the OTP flow, goes straight to
+     * [AuthUiState.loggedIn] since the password is set at creation time; no [AuthStep.
+     * SET_PASSWORD] step needed. If the email is already registered, switches the step into
+     * login mode instead of showing a raw error. */
+    fun createAccount() {
+        val state = _uiState.value
+        val email = state.email.trim()
+        val password = state.password
+        if (email.isBlank() || !Validators.isValidEmail(email)) {
+            _uiState.update { it.copy(emailError = "Enter a valid email address") }
+            return
+        }
+        if (password.length < 8) {
+            _uiState.update { it.copy(passwordError = "Password must be at least 8 characters") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCreatingAccount = true, errorMessage = null, passwordError = null) }
+            authClient.signUp(email, password).fold(
+                onSuccess = { session ->
+                    authPreferences.saveSession(email, session)
+                    _uiState.update { it.copy(isCreatingAccount = false, loggedIn = true) }
+                    // Same fire-and-forget sync as the other login paths — see verifyCode().
+                    viewModelScope.launch { syncManager.sync() }
+                },
+                onFailure = { error ->
+                    if (error.message == "ACCOUNT_EXISTS") {
+                        _uiState.update {
+                            it.copy(
+                                isCreatingAccount = false,
+                                isReturningUser = true,
+                                errorMessage = "An account already exists for this email — log in below."
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(isCreatingAccount = false, errorMessage = error.message ?: "Couldn't create the account. Please try again.")
+                        }
+                    }
+                }
+            )
+        }
     }
 
     /** Instant login for a returning user who already set a password — skips the OTP email
