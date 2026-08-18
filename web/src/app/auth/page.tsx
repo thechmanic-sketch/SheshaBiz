@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { KeyRound, ArrowLeft, Sparkles, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PLAN_TIERS, type PlanTierId } from "@/lib/plans";
@@ -30,6 +31,10 @@ export default function AuthPage() {
   const [intent, setIntent] = useState<SignupIntent>("trial");
   const [email, setEmail] = useState("");
   const [password, setPasswordField] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [city, setCity] = useState("");
   const [code, setCode] = useState("");
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -60,10 +65,15 @@ export default function AuthPage() {
 
   async function handleCreateAccount(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!email.trim() || !password) return;
+    if (!email.trim() || !password || !fullName.trim() || !phone.trim() || !businessName.trim()) return;
     setBusy(true);
     setError(null);
-    const result = await signUpWithPassword(email.trim(), password);
+    const result = await signUpWithPassword(email.trim(), password, {
+      full_name: fullName.trim(),
+      phone: phone.trim(),
+      business_name: businessName.trim(),
+      city: city.trim() || undefined,
+    });
     setBusy(false);
     if (result.ok) {
       routeAfterAuth();
@@ -234,6 +244,57 @@ export default function AuthPage() {
                 placeholder="you@business.co.za"
               />
             </div>
+            {!isReturningUser && (
+              <>
+                <div>
+                  <label className={labelCls}>Full Name</label>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    required
+                    className={`${inputCls} mt-1`}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Jane Dlamini"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Phone Number</label>
+                  <input
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    className={`${inputCls} mt-1`}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="082 123 4567"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Business Name</label>
+                  <input
+                    type="text"
+                    autoComplete="organization"
+                    required
+                    className={`${inputCls} mt-1`}
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Jane's Catering"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>City/Town</label>
+                  <input
+                    type="text"
+                    autoComplete="address-level2"
+                    className={`${inputCls} mt-1`}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Johannesburg"
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className={labelCls}>Password</label>
               <input
@@ -249,7 +310,12 @@ export default function AuthPage() {
             {error && <p className="text-sm font-medium text-error">{error}</p>}
             <button
               type="submit"
-              disabled={busy || !email.trim() || !password}
+              disabled={
+                busy ||
+                !email.trim() ||
+                !password ||
+                (!isReturningUser && (!fullName.trim() || !phone.trim() || !businessName.trim()))
+              }
               className={primaryButtonCls}
             >
               <Lock size={15} />
@@ -259,14 +325,22 @@ export default function AuthPage() {
               {isReturningUser ? "New here? Create an account" : "Already have an account? Log in"}
             </button>
             {isReturningUser && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={handleSendCode}
-                className="text-center text-xs font-semibold text-ink-faint hover:text-ink-soft disabled:opacity-50"
-              >
-                Forgot your password? Log in with a code instead
-              </button>
+              <div className="flex flex-col items-center gap-1.5">
+                <Link
+                  href="/forgot-password"
+                  className="text-center text-xs font-semibold text-brand-deep hover:underline"
+                >
+                  Forgot password?
+                </Link>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={handleSendCode}
+                  className="text-center text-xs font-semibold text-ink-faint hover:text-ink-soft disabled:opacity-50"
+                >
+                  Forgot your password? Log in with a code instead
+                </button>
+              </div>
             )}
           </form>
         ) : step === "code" ? (

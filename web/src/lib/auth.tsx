@@ -47,7 +47,8 @@ interface AuthContextValue {
    * sendCode()/OTP is. */
   signUpWithPassword: (
     email: string,
-    password: string
+    password: string,
+    metadata?: { full_name?: string; phone?: string; business_name?: string; city?: string }
   ) => Promise<{ ok: boolean; error?: string; accountExists?: boolean }>;
   /** Password login for accounts created via signUpWithPassword, or legacy
    * OTP accounts that have since set a password via setPassword(). */
@@ -57,6 +58,12 @@ interface AuthContextValue {
    * gate: it must never be allowed to block the caller from proceeding —
    * the caller decides what to do with a failure (e.g. just move on). */
   setPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Sends a password-reset email via Supabase's resetPasswordForEmail, for
+   * an account that has a password but forgot it — separate from the
+   * legacy no-password OTP fallback. Supabase's reset endpoint is
+   * anti-enumeration by design: this always resolves ok:true for any
+   * non-network outcome, never revealing whether the email has an account. */
+  requestPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   /** Idempotent — safe to call repeatedly. Returns the caller's business id,
    * creating the row (with a fresh trial_started_at) only the first time
@@ -195,11 +202,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [bootstrapBusiness]);
 
   const signUpWithPassword = useCallback(
-    async (emailAddress: string, password: string) => {
+    async (
+      emailAddress: string,
+      password: string,
+      metadata?: { full_name?: string; phone?: string; business_name?: string; city?: string }
+    ) => {
       try {
         const { data, error } = await supabase.auth.signUp({
           email: emailAddress,
           password,
+          options: metadata ? { data: metadata } : undefined,
         });
         if (!error && data.session) {
           // Real new account, already logged in (no email sent — "Confirm
@@ -266,6 +278,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const requestPasswordReset = useCallback(async (emailAddress: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailAddress, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      // Anti-enumeration: Supabase's own endpoint never reveals whether the
+      // email has an account, so neither do we — any outcome short of a
+      // genuine network/unexpected failure reports ok:true.
+      if (error) {
+        const status = "status" in error ? (error as { status?: number }).status : undefined;
+        if (status && status >= 500) {
+          return { ok: false, error: "Couldn't send the reset link. Check your connection and try again." };
+        }
+        return { ok: true };
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Couldn't send the reset link. Check your connection and try again." };
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -288,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithPassword,
       signInWithPassword,
       setPassword,
+      requestPasswordReset,
       signOut,
       bootstrapBusiness,
       refreshStatus,
@@ -305,6 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithPassword,
       signInWithPassword,
       setPassword,
+      requestPasswordReset,
       signOut,
       bootstrapBusiness,
       refreshStatus,
