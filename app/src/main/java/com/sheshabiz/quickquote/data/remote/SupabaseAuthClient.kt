@@ -95,12 +95,21 @@ object SupabaseAuthClient {
      * usable session immediately. Supabase's anti-enumeration behavior means an email that's
      * already registered comes back as a 2xx with no access_token rather than an error, so that
      * case is surfaced as a distinct [Result.failure] (message == "ACCOUNT_EXISTS") for the
-     * caller to pattern-match on instead of showing it to the user directly. */
-    suspend fun signUp(email: String, password: String): Result<AuthSession> = withContext(Dispatchers.IO) {
+     * caller to pattern-match on instead of showing it to the user directly. [data], when
+     * present, is sent under the signup request's `"data"` key — Supabase stores this verbatim
+     * as `auth.users.raw_user_meta_data`, no schema change needed. Used to capture light signup
+     * context (full name, phone, business name, city) for the admin doing manual plan
+     * activation later; see [com.sheshabiz.quickquote.ui.auth.AuthViewModel.createAccount]. */
+    suspend fun signUp(email: String, password: String, data: Map<String, String>? = null): Result<AuthSession> = withContext(Dispatchers.IO) {
         try {
             val body = JSONObject().apply {
                 put("email", email)
                 put("password", password)
+                if (!data.isNullOrEmpty()) {
+                    val metadata = JSONObject()
+                    data.forEach { (key, value) -> metadata.put(key, value) }
+                    put("data", metadata)
+                }
             }
             val (statusCode, responseText) = postJson("$SUPABASE_URL/auth/v1/signup", body.toString())
             if (statusCode in 200..299) {
@@ -173,6 +182,36 @@ object SupabaseAuthClient {
             Result.failure(Exception("Couldn't reach the server. Check your connection and try again."))
         } catch (e: Exception) {
             Result.failure(Exception("Couldn't save your password. Please try again."))
+        }
+    }
+
+    /** Requests a password-reset email for [email], separate from the OTP-login fallback — this
+     * is the standard "forgot password" flow for an account that already has a password. Posts
+     * to `/auth/v1/recover` with [redirectTo] (URL-encoded) as the `redirect_to` query param, so
+     * Supabase's emailed link opens back into the app there with recovery tokens attached — see
+     * [com.sheshabiz.quickquote.MainActivity] for how those are parsed back out.
+     *
+     * Supabase's `/recover` endpoint deliberately never reveals whether an account exists for
+     * [email] (anti-enumeration) — it responds 2xx either way, regardless of whether an account
+     * is actually found. So a [Result.failure] here only ever means a genuine network or server
+     * problem, never "no such account": callers are safe to show a generic "if an account
+     * exists..." message on [Result.success] and the real error message on failure. */
+    suspend fun requestPasswordReset(email: String, redirectTo: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("email", email)
+            }
+            val encodedRedirect = java.net.URLEncoder.encode(redirectTo, "UTF-8")
+            val (statusCode, responseText) = postJson("$SUPABASE_URL/auth/v1/recover?redirect_to=$encodedRedirect", body.toString())
+            if (statusCode in 200..299) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(extractErrorMessage(responseText) ?: "Couldn't send the reset link. Please try again."))
+            }
+        } catch (e: IOException) {
+            Result.failure(Exception("Couldn't reach the server. Check your connection and try again."))
+        } catch (e: Exception) {
+            Result.failure(Exception("Couldn't send the reset link. Please try again."))
         }
     }
 

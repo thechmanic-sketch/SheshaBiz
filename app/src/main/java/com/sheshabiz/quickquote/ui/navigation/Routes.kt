@@ -18,6 +18,14 @@ object Routes {
     const val APP_LOCK = "app_lock"
     const val PIN_SETUP = "pin_setup"
     const val ACCOUNT_LOGIN = "account_login"
+    /** Standalone "forgot password" request screen — reset-link email, separate from the
+     * existing OTP-code login fallback reachable inside [ACCOUNT_LOGIN]'s step machine. */
+    const val FORGOT_PASSWORD = "forgot_password"
+    /** Landing route for the `sheshabiz://reset-password` deep link. Never navigated to with a
+     * route argument — the recovery tokens travel through
+     * [com.sheshabiz.quickquote.ui.navigation.QuickQuoteNavHost]'s `recoveryTokens` parameter
+     * instead of the backstack, so they never end up in navigation history/logs. */
+    const val RESET_PASSWORD = "reset_password"
 
     const val SUBSCRIPTION = "subscription"
     const val SUBSCRIPTION_PLAN_ARG = "planId"

@@ -50,7 +50,8 @@ import com.sheshabiz.quickquote.ui.subscription.SubscriptionPlan
 fun AuthScreen(
     viewModel: AuthViewModel,
     onDone: (SubscriptionPlan?) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onForgotPassword: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -74,7 +75,7 @@ fun AuthScreen(
         ) {
             when (state.step) {
                 AuthStep.CHOOSE_START -> ChooseStartStep(viewModel = viewModel)
-                AuthStep.EMAIL -> EmailStep(state = state, viewModel = viewModel)
+                AuthStep.EMAIL -> EmailStep(state = state, viewModel = viewModel, onForgotPassword = onForgotPassword)
                 AuthStep.CODE -> CodeStep(state = state, viewModel = viewModel)
                 AuthStep.SET_PASSWORD -> SetPasswordStep(state = state, viewModel = viewModel)
             }
@@ -152,7 +153,7 @@ private fun StartOptionCard(
 }
 
 @Composable
-private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
+private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel, onForgotPassword: () -> Unit) {
     Text(
         text = if (state.isReturningUser) "Log in" else "Create your account",
         style = MaterialTheme.typography.headlineSmall,
@@ -179,6 +180,45 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
         errorText = state.emailError
     )
     Spacer(Modifier.height(16.dp))
+
+    // Light signup-context fields — create-account mode only. Login mode stays exactly
+    // email + password, unchanged. See AuthUiState.fullName's doc comment.
+    if (!state.isReturningUser) {
+        QQTextField(
+            value = state.fullName,
+            onValueChange = viewModel::onFullNameChange,
+            label = "Full Name",
+            isError = state.fullNameError != null,
+            errorText = state.fullNameError
+        )
+        Spacer(Modifier.height(16.dp))
+
+        QQTextField(
+            value = state.phone,
+            onValueChange = viewModel::onPhoneChange,
+            label = "Phone Number",
+            keyboardType = KeyboardType.Phone,
+            isError = state.phoneError != null,
+            errorText = state.phoneError
+        )
+        Spacer(Modifier.height(16.dp))
+
+        QQTextField(
+            value = state.businessName,
+            onValueChange = viewModel::onBusinessNameChange,
+            label = "Business Name",
+            isError = state.businessNameError != null,
+            errorText = state.businessNameError
+        )
+        Spacer(Modifier.height(16.dp))
+
+        QQTextField(
+            value = state.city,
+            onValueChange = viewModel::onCityChange,
+            label = "City/Town (optional)"
+        )
+        Spacer(Modifier.height(16.dp))
+    }
 
     QQTextField(
         value = state.password,
@@ -209,6 +249,13 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
         Spacer(Modifier.height(8.dp))
         QQTextActionButton(text = "New here? Create an account", onClick = viewModel::toggleReturningUser)
         Spacer(Modifier.height(4.dp))
+        TextButton(onClick = onForgotPassword) {
+            Text(
+                text = "Forgot password?",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         TextButton(onClick = viewModel::sendCode) {
             Text(
                 text = "Forgot your password? Log in with a code instead",

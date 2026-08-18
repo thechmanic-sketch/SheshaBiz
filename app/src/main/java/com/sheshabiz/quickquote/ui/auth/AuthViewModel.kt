@@ -39,6 +39,18 @@ data class AuthUiState(
      * password support. */
     val password: String = "",
     val passwordError: String? = null,
+    /** Light signup-context fields, create-account mode only (never shown or validated in
+     * login mode) — captured so the admin has enough context to recognize who's who when
+     * manually activating a paid plan later. Sent as Supabase signup metadata; see
+     * [AuthViewModel.createAccount] and [com.sheshabiz.quickquote.data.remote.
+     * SupabaseAuthClient.signUp]. City/Town is the only optional one of the four. */
+    val fullName: String = "",
+    val fullNameError: String? = null,
+    val phone: String = "",
+    val phoneError: String? = null,
+    val businessName: String = "",
+    val businessNameError: String? = null,
+    val city: String = "",
     val isReturningUser: Boolean = false,
     val isPasswordLoggingIn: Boolean = false,
     val isCreatingAccount: Boolean = false,
@@ -164,17 +176,54 @@ class AuthViewModel(
         _uiState.update { it.copy(password = value, passwordError = null, errorMessage = null) }
     }
 
+    fun onFullNameChange(value: String) {
+        _uiState.update { it.copy(fullName = value, fullNameError = null, errorMessage = null) }
+    }
+
+    fun onPhoneChange(value: String) {
+        _uiState.update { it.copy(phone = value, phoneError = null, errorMessage = null) }
+    }
+
+    fun onBusinessNameChange(value: String) {
+        _uiState.update { it.copy(businessName = value, businessNameError = null, errorMessage = null) }
+    }
+
+    fun onCityChange(value: String) {
+        _uiState.update { it.copy(city = value, errorMessage = null) }
+    }
+
     /** Creates a brand-new account with email + password — the primary signup path. Sends zero
      * email (Supabase's "Confirm email" is off) and, unlike the OTP flow, goes straight to
      * [AuthUiState.loggedIn] since the password is set at creation time; no [AuthStep.
      * SET_PASSWORD] step needed. If the email is already registered, switches the step into
-     * login mode instead of showing a raw error. */
+     * login mode instead of showing a raw error.
+     *
+     * Also validates and sends the four light signup-context fields (full name, phone, business
+     * name, optional city) as Supabase signup metadata — see [AuthUiState.fullName] and
+     * [com.sheshabiz.quickquote.data.remote.SupabaseAuthClient.signUp]. These only ever apply to
+     * account creation; [loginWithPassword] never touches them. */
     fun createAccount() {
         val state = _uiState.value
         val email = state.email.trim()
         val password = state.password
+        val fullName = state.fullName.trim()
+        val phone = state.phone.trim()
+        val businessName = state.businessName.trim()
+        val city = state.city.trim()
         if (email.isBlank() || !Validators.isValidEmail(email)) {
             _uiState.update { it.copy(emailError = "Enter a valid email address") }
+            return
+        }
+        if (fullName.isBlank()) {
+            _uiState.update { it.copy(fullNameError = "Enter your full name") }
+            return
+        }
+        if (phone.isBlank() || !Validators.isValidPhone(phone)) {
+            _uiState.update { it.copy(phoneError = "Enter a valid phone number") }
+            return
+        }
+        if (businessName.isBlank()) {
+            _uiState.update { it.copy(businessNameError = "Enter your business name") }
             return
         }
         if (password.length < 8) {
@@ -183,8 +232,23 @@ class AuthViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isCreatingAccount = true, errorMessage = null, passwordError = null) }
-            authClient.signUp(email, password).fold(
+            _uiState.update {
+                it.copy(
+                    isCreatingAccount = true,
+                    errorMessage = null,
+                    passwordError = null,
+                    fullNameError = null,
+                    phoneError = null,
+                    businessNameError = null
+                )
+            }
+            val metadata = buildMap {
+                put("full_name", fullName)
+                put("phone", phone)
+                put("business_name", businessName)
+                if (city.isNotBlank()) put("city", city)
+            }
+            authClient.signUp(email, password, metadata).fold(
                 onSuccess = { session ->
                     authPreferences.saveSession(email, session)
                     _uiState.update { it.copy(isCreatingAccount = false, loggedIn = true) }

@@ -20,8 +20,8 @@ android {
         applicationId = "com.sheshabiz.quickquote"
         minSdk = 21
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.13.0"
+        versionCode = 17
+        versionName = "1.14.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }

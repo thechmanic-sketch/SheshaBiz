@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,11 +46,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.sheshabiz.quickquote.PasswordRecoveryTokens
 import com.sheshabiz.quickquote.R
 import com.sheshabiz.quickquote.di.AppContainer
 import com.sheshabiz.quickquote.di.viewModelFactory
 import com.sheshabiz.quickquote.ui.auth.AuthScreen
 import com.sheshabiz.quickquote.ui.auth.AuthViewModel
+import com.sheshabiz.quickquote.ui.auth.ForgotPasswordScreen
+import com.sheshabiz.quickquote.ui.auth.ForgotPasswordViewModel
+import com.sheshabiz.quickquote.ui.auth.ResetPasswordScreen
+import com.sheshabiz.quickquote.ui.auth.ResetPasswordViewModel
 import com.sheshabiz.quickquote.ui.businesssetup.BusinessSetupScreen
 import com.sheshabiz.quickquote.ui.businesssetup.BusinessSetupViewModel
 import com.sheshabiz.quickquote.ui.customers.CustomerEditScreen
@@ -104,12 +110,27 @@ private val bottomTabs = listOf(
 )
 
 @Composable
-fun QuickQuoteNavHost(container: AppContainer) {
+fun QuickQuoteNavHost(container: AppContainer, recoveryTokens: PasswordRecoveryTokens? = null) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = bottomTabs.any { it.route == currentRoute }
+
+    // A `sheshabiz://reset-password` deep link (parsed by MainActivity, passed down here
+    // instead of through the backstack so the recovery tokens never end up in navigation
+    // history/logs) — routes straight to ResetPasswordScreen, popping Splash off the
+    // backstack first so its own onFinished routing (below) can't race and override this.
+    // Fires for both a cold start (recoveryTokens already set on first composition) and an
+    // already-running app (MainActivity.onNewIntent updates recoveryTokens, recomposing here).
+    LaunchedEffect(recoveryTokens) {
+        if (recoveryTokens != null) {
+            navController.navigate(Routes.RESET_PASSWORD) {
+                popUpTo(Routes.SPLASH) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -385,8 +406,54 @@ fun QuickQuoteNavHost(container: AppContainer) {
                             navController.navigate(Routes.subscription(chosenPlan.name))
                         }
                     },
+                    onBack = { navController.popBackStack() },
+                    onForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) }
+                )
+            }
+
+            composable(Routes.FORGOT_PASSWORD) {
+                val vm = viewModel<ForgotPasswordViewModel>(
+                    factory = viewModelFactory { ForgotPasswordViewModel(container.supabaseAuthClient) }
+                )
+                ForgotPasswordScreen(
+                    viewModel = vm,
                     onBack = { navController.popBackStack() }
                 )
+            }
+
+            composable(Routes.RESET_PASSWORD) {
+                val tokens = recoveryTokens
+                if (tokens == null) {
+                    // Not reachable via the LaunchedEffect above (it only navigates here when
+                    // recoveryTokens is non-null), but guard against a stray/duplicate
+                    // navigation to this route by bouncing to the normal entry point.
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Routes.SPLASH) { popUpTo(0) }
+                    }
+                } else {
+                    val vm = viewModel<ResetPasswordViewModel>(
+                        factory = viewModelFactory {
+                            ResetPasswordViewModel(
+                                authClient = container.supabaseAuthClient,
+                                authPreferences = container.authPreferences,
+                                accessToken = tokens.accessToken,
+                                refreshToken = tokens.refreshToken,
+                                email = tokens.email
+                            )
+                        }
+                    )
+                    ResetPasswordScreen(
+                        viewModel = vm,
+                        onDone = {
+                            // Not a fresh signup, so this deliberately does NOT go through
+                            // AuthScreen's onDone/chosenPlan mechanism — just clear the
+                            // backstack and let Splash's normal routing (onboarding /
+                            // business setup / app lock / dashboard) decide where a
+                            // logged-in user lands, same as any other app entry.
+                            navController.navigate(Routes.SPLASH) { popUpTo(0) }
+                        }
+                    )
+                }
             }
 
             composable(Routes.MORE) {
