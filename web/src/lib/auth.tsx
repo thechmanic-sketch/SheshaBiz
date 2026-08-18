@@ -40,6 +40,23 @@ interface AuthContextValue {
   validUntil: string | null;
   sendCode: (email: string) => Promise<{ ok: boolean; error?: string }>;
   verifyCode: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Primary signup path now that "Confirm email" is OFF in the Supabase
+   * dashboard: supabase.auth.signUp() with a password creates the account
+   * and logs the user in immediately, with zero email sent — so it isn't
+   * subject to the shared free-tier email sender's rate limit the way
+   * sendCode()/OTP is. */
+  signUpWithPassword: (
+    email: string,
+    password: string
+  ) => Promise<{ ok: boolean; error?: string; accountExists?: boolean }>;
+  /** Password login for accounts created via signUpWithPassword, or legacy
+   * OTP accounts that have since set a password via setPassword(). */
+  signInWithPassword: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Lets a user who just logged in via OTP (a legacy account with no
+   * password yet) set one for next time. This is a convenience, not a
+   * gate: it must never be allowed to block the caller from proceeding —
+   * the caller decides what to do with a failure (e.g. just move on). */
+  setPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   /** Idempotent — safe to call repeatedly. Returns the caller's business id,
    * creating the row (with a fresh trial_started_at) only the first time
@@ -177,6 +194,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [bootstrapBusiness]);
 
+  const signUpWithPassword = useCallback(
+    async (emailAddress: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: emailAddress,
+          password,
+        });
+        if (!error && data.session) {
+          // Real new account, already logged in (no email sent — "Confirm
+          // email" is OFF). Same post-login bootstrap as verifyCode().
+          await bootstrapBusiness();
+          requestSync();
+          return { ok: true };
+        }
+        if (!error && !data.session && data.user?.identities?.length === 0) {
+          // Supabase's documented anti-enumeration signal: signUp() on an
+          // email that already has an account returns no error and no
+          // session, with an empty identities array, instead of an error
+          // that would reveal the email is taken.
+          return {
+            ok: false,
+            accountExists: true,
+            error: "An account already exists for this email — log in instead.",
+          };
+        }
+        return {
+          ok: false,
+          error: error?.message ?? "Couldn't create the account automatically. Try logging in, or use a code.",
+        };
+      } catch {
+        return {
+          ok: false,
+          error: "Couldn't create the account automatically. Try logging in, or use a code.",
+        };
+      }
+    },
+    [bootstrapBusiness]
+  );
+
+  const signInWithPassword = useCallback(
+    async (emailAddress: string, password: string) => {
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: emailAddress,
+          password,
+        });
+        if (error) {
+          return { ok: false, error: "Incorrect email or password." };
+        }
+        await bootstrapBusiness();
+        requestSync();
+        return { ok: true };
+      } catch {
+        return { ok: false, error: "Incorrect email or password." };
+      }
+    },
+    [bootstrapBusiness]
+  );
+
+  const setPassword = useCallback(async (password: string) => {
+    // Best-effort convenience after a legacy OTP login — never treat a
+    // failure here as blocking; the caller decides what to do with it
+    // (typically: show the error but proceed to the app regardless).
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Couldn't save the password. You can set one later from settings." };
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -196,6 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       validUntil,
       sendCode,
       verifyCode,
+      signUpWithPassword,
+      signInWithPassword,
+      setPassword,
       signOut,
       bootstrapBusiness,
       refreshStatus,
@@ -210,6 +302,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       validUntil,
       sendCode,
       verifyCode,
+      signUpWithPassword,
+      signInWithPassword,
+      setPassword,
       signOut,
       bootstrapBusiness,
       refreshStatus,
