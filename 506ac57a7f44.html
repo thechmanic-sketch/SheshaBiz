@@ -123,6 +123,23 @@
     <div id="codeMsg"></div>
   </div>
 
+  <!-- Forced password change (temp/first-time password) -->
+  <div class="card hidden" id="newPasswordStep">
+    <p class="sub">You're signed in with a temporary password. Set a real one before continuing.</p>
+    <div style="margin-top:10px">
+      <label for="newPasswordInput">New password</label>
+      <input id="newPasswordInput" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+    </div>
+    <div style="margin-top:10px">
+      <label for="newPasswordConfirm">Confirm new password</label>
+      <input id="newPasswordConfirm" type="password" placeholder="Repeat it" autocomplete="new-password" />
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="setNewPasswordBtn">Save password</button>
+    </div>
+    <div id="newPasswordMsg"></div>
+  </div>
+
   <!-- Not authorized -->
   <div class="card hidden" id="notAuthorized">
     <p class="sub" id="notAuthorizedText">Logged in, but this account isn't authorized for the control dashboard.</p>
@@ -265,6 +282,22 @@ async function checkSession() {
   el("logoutBtn").classList.remove("hidden");
   el("subline").textContent = `Logged in as ${session.email}`;
   hide(emailStep); hide(codeStep);
+
+  // Re-check on every load (not just right after signing in) so reloading
+  // mid-flow can't be used to skip a pending forced password change.
+  try {
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}` },
+    });
+    const userBody = await userRes.json().catch(() => ({}));
+    if (userRes.ok && userBody.user_metadata && userBody.user_metadata.must_change_password) {
+      hide(notAuthorized); hide(dashboard);
+      setMsg(el("newPasswordMsg"), "", "");
+      show(el("newPasswordStep"));
+      return;
+    }
+  } catch { /* if this check fails, fall through to the normal admin check below */ }
+
   const { data, error } = await rpc("is_admin");
   if (error && error.network) {
     // A connectivity blip is not the same as "you're not the admin" — say so
@@ -287,6 +320,27 @@ async function checkSession() {
   await loadBusinesses();
 }
 
+// Shared by both sign-in paths: stash the session, then either force a
+// password change (temp/first-time password — see must_change_password in
+// the SQL that sets one) or go straight to the normal admin-check flow.
+async function handleLoginSuccess(data, fallbackEmail) {
+  setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    email: (data.user && data.user.email) || fallbackEmail,
+  });
+  const mustChange = !!(data.user && data.user.user_metadata && data.user.user_metadata.must_change_password);
+  hide(emailStep); hide(codeStep); hide(notAuthorized); hide(dashboard);
+  if (mustChange) {
+    setMsg(el("newPasswordMsg"), "", "");
+    el("newPasswordInput").value = "";
+    el("newPasswordConfirm").value = "";
+    show(el("newPasswordStep"));
+    return;
+  }
+  await checkSession();
+}
+
 el("passwordSignInBtn").addEventListener("click", async () => {
   const email = el("emailInput").value.trim();
   const password = el("passwordInput").value;
@@ -299,12 +353,40 @@ el("passwordSignInBtn").addEventListener("click", async () => {
     setMsg(el("emailMsg"), data.error_description || data.msg || "That email/password combination isn't right.", "error");
     return;
   }
-  setSession({
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    email: (data.user && data.user.email) || email,
-  });
-  await checkSession();
+  await handleLoginSuccess(data, email);
+});
+
+el("setNewPasswordBtn").addEventListener("click", async () => {
+  const pw = el("newPasswordInput").value;
+  const confirm = el("newPasswordConfirm").value;
+  if (pw.length < 8) { setMsg(el("newPasswordMsg"), "Use at least 8 characters.", "error"); return; }
+  if (pw !== confirm) { setMsg(el("newPasswordMsg"), "Passwords don't match.", "error"); return; }
+  const session = getSession();
+  if (!session) { setMsg(el("newPasswordMsg"), "Your session expired — sign in again.", "error"); await checkSession(); return; }
+  el("setNewPasswordBtn").disabled = true;
+  setMsg(el("newPasswordMsg"), "", "");
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password: pw, data: { must_change_password: false } }),
+    });
+    const body = await res.json().catch(() => ({}));
+    el("setNewPasswordBtn").disabled = false;
+    if (!res.ok) {
+      setMsg(el("newPasswordMsg"), body.msg || body.error_description || "Couldn't save the new password.", "error");
+      return;
+    }
+    hide(el("newPasswordStep"));
+    await checkSession();
+  } catch {
+    el("setNewPasswordBtn").disabled = false;
+    setMsg(el("newPasswordMsg"), "Couldn't reach the server. Check your connection and try again.", "error");
+  }
 });
 
 el("sendCodeBtn").addEventListener("click", async () => {
@@ -335,12 +417,7 @@ el("verifyBtn").addEventListener("click", async () => {
   const { ok, data } = await authFetch("/verify", { type: "email", email: pendingEmail, token });
   el("verifyBtn").disabled = false;
   if (!ok || !data.access_token) { setMsg(el("codeMsg"), "That code is incorrect or expired.", "error"); return; }
-  setSession({
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    email: (data.user && data.user.email) || pendingEmail,
-  });
-  await checkSession();
+  await handleLoginSuccess(data, pendingEmail);
 });
 
 el("logoutBtn").addEventListener("click", async () => {
