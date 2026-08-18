@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.sheshabiz.quickquote.ui.common.QQPrimaryButton
 import com.sheshabiz.quickquote.ui.common.QQTextActionButton
@@ -31,9 +32,11 @@ import com.sheshabiz.quickquote.ui.common.ScreenHeader
 import com.sheshabiz.quickquote.ui.subscription.SubscriptionPlan
 
 /**
- * Three-step, single-screen email OTP login: pick how to start (free trial or a paid plan),
- * then email entry, then code entry, switching in place (no separate nav route per step,
- * mirroring [com.sheshabiz.quickquote.ui.lock.PinSetupScreen]).
+ * Single-screen login: pick how to start (free trial or a paid plan), then email entry
+ * (with an instant email+password alternative for returning users, see [AuthViewModel.
+ * togglePasswordLogin]), then OTP code entry, then an optional set-a-password step — all
+ * switching in place (no separate nav route per step, mirroring
+ * [com.sheshabiz.quickquote.ui.lock.PinSetupScreen]).
  *
  * This is login only. It never syncs, pushes, or pulls any business data — a successful
  * verification only stores a session via [com.sheshabiz.quickquote.data.prefs.AuthPreferences].
@@ -72,6 +75,7 @@ fun AuthScreen(
                 AuthStep.CHOOSE_START -> ChooseStartStep(viewModel = viewModel)
                 AuthStep.EMAIL -> EmailStep(state = state, viewModel = viewModel)
                 AuthStep.CODE -> CodeStep(state = state, viewModel = viewModel)
+                AuthStep.SET_PASSWORD -> SetPasswordStep(state = state, viewModel = viewModel)
             }
         }
     }
@@ -172,6 +176,19 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
     )
     Spacer(Modifier.height(16.dp))
 
+    if (state.showPasswordLogin) {
+        QQTextField(
+            value = state.password,
+            onValueChange = viewModel::onPasswordChange,
+            label = "Password",
+            keyboardType = KeyboardType.Password,
+            isError = state.passwordError != null,
+            errorText = state.passwordError,
+            visualTransformation = PasswordVisualTransformation()
+        )
+        Spacer(Modifier.height(16.dp))
+    }
+
     if (state.errorMessage != null) {
         Text(
             text = state.errorMessage,
@@ -181,11 +198,23 @@ private fun EmailStep(state: AuthUiState, viewModel: AuthViewModel) {
         Spacer(Modifier.height(12.dp))
     }
 
-    QQPrimaryButton(
-        text = "Send code",
-        onClick = viewModel::sendCode,
-        loading = state.isSendingCode
-    )
+    if (state.showPasswordLogin) {
+        QQPrimaryButton(
+            text = "Log in",
+            onClick = viewModel::loginWithPassword,
+            loading = state.isPasswordLoggingIn
+        )
+        Spacer(Modifier.height(8.dp))
+        QQTextActionButton(text = "Use a code instead", onClick = viewModel::togglePasswordLogin)
+    } else {
+        QQPrimaryButton(
+            text = "Send code",
+            onClick = viewModel::sendCode,
+            loading = state.isSendingCode
+        )
+        Spacer(Modifier.height(8.dp))
+        QQTextActionButton(text = "Already have a password? Log in instantly", onClick = viewModel::togglePasswordLogin)
+    }
 }
 
 @Composable
@@ -231,4 +260,49 @@ private fun CodeStep(state: AuthUiState, viewModel: AuthViewModel) {
         QQTextActionButton(text = "Resend code", onClick = viewModel::sendCode)
         QQTextActionButton(text = "Change email", onClick = viewModel::changeEmail)
     }
+}
+
+@Composable
+private fun SetPasswordStep(state: AuthUiState, viewModel: AuthViewModel) {
+    Text(
+        text = "Set a password (optional)",
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = "Skip the wait next time — set a password now and log in instantly on any device.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(Modifier.height(24.dp))
+
+    QQTextField(
+        value = state.newPassword,
+        onValueChange = viewModel::onNewPasswordChange,
+        label = "New password",
+        keyboardType = KeyboardType.Password,
+        visualTransformation = PasswordVisualTransformation()
+    )
+    Spacer(Modifier.height(12.dp))
+
+    QQTextField(
+        value = state.newPasswordConfirm,
+        onValueChange = viewModel::onNewPasswordConfirmChange,
+        label = "Confirm password",
+        keyboardType = KeyboardType.Password,
+        isError = state.passwordError != null,
+        errorText = state.passwordError,
+        visualTransformation = PasswordVisualTransformation()
+    )
+    Spacer(Modifier.height(16.dp))
+
+    QQPrimaryButton(
+        text = "Save password",
+        onClick = viewModel::savePassword,
+        loading = state.isSavingPassword
+    )
+    Spacer(Modifier.height(8.dp))
+
+    QQTextActionButton(text = "Skip for now", onClick = viewModel::skipPassword)
 }

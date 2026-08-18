@@ -90,6 +90,56 @@ object SupabaseAuthClient {
         }
     }
 
+    /** Signs in with email + password — the fast path for a returning user who already set a
+     * password via [setPassword], skipping the OTP email entirely. */
+    suspend fun signInWithPassword(email: String, password: String): Result<AuthSession> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("email", email)
+                put("password", password)
+            }
+            val (statusCode, responseText) = postJson("$SUPABASE_URL/auth/v1/token?grant_type=password", body.toString())
+            if (statusCode in 200..299) {
+                val json = JSONObject(responseText)
+                val accessToken = json.optString("access_token", "")
+                val refreshToken = json.optString("refresh_token", "")
+                val expiresIn = json.optLong("expires_in", 3600L)
+                if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
+                    Result.success(AuthSession(accessToken, refreshToken, expiresIn))
+                } else {
+                    Result.failure(Exception("Login failed. Please try again."))
+                }
+            } else {
+                Result.failure(Exception(extractErrorMessage(responseText) ?: "Incorrect email or password."))
+            }
+        } catch (e: IOException) {
+            Result.failure(Exception("Couldn't reach the server. Check your connection and try again."))
+        } catch (e: Exception) {
+            Result.failure(Exception("Incorrect email or password."))
+        }
+    }
+
+    /** Sets (or replaces) the password on the currently-signed-in account, so future logins
+     * can skip the OTP email via [signInWithPassword]. [accessToken] must be a freshly-issued
+     * session token (e.g. right after an OTP verification). */
+    suspend fun setPassword(accessToken: String, password: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("password", password)
+            }
+            val (statusCode, responseText) = putJson("$SUPABASE_URL/auth/v1/user", body.toString(), accessToken)
+            if (statusCode in 200..299) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(extractErrorMessage(responseText) ?: "Couldn't save your password. Please try again."))
+            }
+        } catch (e: IOException) {
+            Result.failure(Exception("Couldn't reach the server. Check your connection and try again."))
+        } catch (e: Exception) {
+            Result.failure(Exception("Couldn't save your password. Please try again."))
+        }
+    }
+
     private fun extractErrorMessage(responseText: String?): String? {
         if (responseText.isNullOrBlank()) return null
         return runCatching {
@@ -107,6 +157,30 @@ object SupabaseAuthClient {
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("apikey", SUPABASE_ANON_KEY)
             setRequestProperty("Authorization", "Bearer $SUPABASE_ANON_KEY")
+            setRequestProperty("Content-Type", "application/json")
+        }
+        return try {
+            connection.outputStream.use { it.write(json.toByteArray()) }
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val text = stream?.bufferedReader()?.use { reader -> reader.readText() }
+            code to text
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** Same shape as [postJson] but for PUT requests that need an additional bearer token on
+     * top of the anon `apikey` header — used for authenticated calls like updating the current
+     * user's password. */
+    private fun putJson(urlString: String, json: String, accessToken: String): Pair<Int, String?> {
+        val connection = (URL(urlString).openConnection() as HttpURLConnection).apply {
+            requestMethod = "PUT"
+            doOutput = true
+            connectTimeout = CONNECT_TIMEOUT_MS
+            readTimeout = READ_TIMEOUT_MS
+            setRequestProperty("apikey", SUPABASE_ANON_KEY)
+            setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Content-Type", "application/json")
         }
         return try {
