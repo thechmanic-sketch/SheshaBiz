@@ -106,6 +106,8 @@
   button.primary:disabled { opacity: .5; cursor: default; }
   button.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
   button.ghost:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  button.danger { background: transparent; border: 1px solid var(--error); color: var(--error); }
+  button.danger:hover { background: var(--error-tint); }
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .msg { border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-top: 12px; }
   .msg.error { background: var(--error-tint); color: var(--error); }
@@ -341,6 +343,10 @@
     <div class="row" style="justify-content:flex-end;margin-top:8px;">
       <button class="ghost" id="modalCancel">Cancel</button>
       <button class="primary" id="modalConfirm">Activate</button>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+      <button class="ghost" id="modalResetSub">Reset subscription</button>
+      <button class="danger" id="modalDeactivate">Deactivate</button>
     </div>
   </div>
 </div>
@@ -800,6 +806,32 @@ el("modalConfirm").addEventListener("click", async () => {
   if (error) { setMsg(el("modalMsg"), error.message || "Couldn't activate this business.", "error"); return; }
   hide(el("modalBackdrop"));
   setMsg(el("dashMsg"), `Activated ${activatingRow.business_name || activatingRow.owner_email}.`, "ok");
+  await loadBusinesses();
+});
+
+el("modalDeactivate").addEventListener("click", async () => {
+  if (!activatingRow) return;
+  const name = activatingRow.business_name || activatingRow.owner_email;
+  if (!confirm(`Deactivate ${name}? They'll lose access immediately. Their plan and dates stay on record — clicking Activate again brings them straight back.`)) return;
+  el("modalDeactivate").disabled = true;
+  const { error } = await rpc("admin_deactivate_business", { target_business_id: activatingRow.business_id });
+  el("modalDeactivate").disabled = false;
+  if (error) { setMsg(el("modalMsg"), error.message || "Couldn't deactivate this business.", "error"); return; }
+  hide(el("modalBackdrop"));
+  setMsg(el("dashMsg"), `Deactivated ${name}.`, "ok");
+  await loadBusinesses();
+});
+
+el("modalResetSub").addEventListener("click", async () => {
+  if (!activatingRow) return;
+  const name = activatingRow.business_name || activatingRow.owner_email;
+  if (!confirm(`Reset ${name}'s subscription? This clears their plan and valid-until date back to no subscription (trial state). Their account, login, and data are not touched.`)) return;
+  el("modalResetSub").disabled = true;
+  const { error } = await rpc("admin_reset_subscription", { target_business_id: activatingRow.business_id });
+  el("modalResetSub").disabled = false;
+  if (error) { setMsg(el("modalMsg"), error.message || "Couldn't reset this subscription.", "error"); return; }
+  hide(el("modalBackdrop"));
+  setMsg(el("dashMsg"), `Reset ${name}'s subscription.`, "ok");
   await loadBusinesses();
 });
 
