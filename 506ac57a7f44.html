@@ -120,6 +120,7 @@
   .pill.trialing { background: var(--info-tint); color: var(--info); }
   .pill.active { background: var(--brand-tint); color: var(--brand-deep); }
   .pill.lapsed { background: var(--error-tint); color: var(--error); }
+  .pill.wants { background: var(--warn-tint); color: var(--warn); }
   .tablewrap { overflow-x: auto; margin-top: 4px; border: 1px solid var(--line); border-radius: 14px; }
   .tablewrap table { margin: 0; }
   .empty { padding: 36px; text-align: center; color: var(--ink-faint); }
@@ -316,6 +317,7 @@
               <th>Owner email</th>
               <th>Status</th>
               <th>Plan</th>
+              <th>Wants</th>
               <th>Trial started</th>
               <th>Valid until</th>
               <th>Active</th>
@@ -334,6 +336,7 @@
     <h2 id="modalTitle" style="margin:0 0 4px;font-size:16px;font-family:'Bricolage Grotesque',sans-serif;"></h2>
     <p class="sub" style="margin:0 0 12px;">Pick the plan this payment covers.</p>
     <div id="planButtons"></div>
+    <p class="sub" id="modalPreview" style="margin:10px 0 0;"></p>
     <div id="modalMsg"></div>
     <div class="row" style="justify-content:flex-end;margin-top:8px;">
       <button class="ghost" id="modalCancel">Cancel</button>
@@ -697,14 +700,17 @@ function renderStats() {
   if (recent.length === 0) {
     recentEl.innerHTML = `<p class="sub" style="margin:0">No businesses yet.</p>`;
   } else {
-    recentEl.innerHTML = recent.map((row) => `
+    recentEl.innerHTML = recent.map((row) => {
+      const wantsPlan = row.pending_plan_tier ? PLAN_TIERS.find((p) => p.id === row.pending_plan_tier) : null;
+      return `
       <div class="recent-row">
         <div>
-          <div class="name">${row.business_name || "—"}</div>
+          <div class="name">${row.business_name || "—"} ${wantsPlan ? `<span class="pill wants">Wants ${wantsPlan.label}</span>` : ""}</div>
           <div class="email">${row.owner_email}</div>
         </div>
         <div class="when mono">${fmtRelative(row.created_at)}</div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   }
 }
 
@@ -716,16 +722,18 @@ function renderRows() {
   el("countLabel").textContent = `${filtered.length} of ${rows.length} business${rows.length === 1 ? "" : "es"}`;
   const tbody = el("tbody");
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">${rows.length === 0 ? "No businesses yet." : "No businesses match your search."}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">${rows.length === 0 ? "No businesses yet." : "No businesses match your search."}</td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map((row) => {
     const status = displayStatus(row);
+    const wantsPlan = row.pending_plan_tier ? PLAN_TIERS.find((p) => p.id === row.pending_plan_tier) : null;
     return `<tr>
       <td><strong>${row.business_name || "—"}</strong></td>
       <td>${row.owner_email}</td>
       <td><span class="pill ${status}">${statusLabel[status]}</span></td>
       <td class="mono">${row.plan_tier || "—"}</td>
+      <td>${wantsPlan ? `<span class="pill wants">${wantsPlan.label}</span>` : "—"}</td>
       <td class="mono">${fmtDate(row.trial_started_at)}</td>
       <td class="mono">${fmtDate(row.valid_until)}</td>
       <td>${row.is_active ? "Yes" : "No"}</td>
@@ -740,7 +748,9 @@ function renderRows() {
 function openModal(businessId) {
   activatingRow = rows.find((r) => r.business_id === businessId);
   if (!activatingRow) return;
-  selectedTier = "monthly";
+  // Default to whatever tier they actually said they wanted, if we know it —
+  // falls back to monthly only when there's no signal either way.
+  selectedTier = activatingRow.pending_plan_tier || "monthly";
   el("modalTitle").textContent = `Activate ${activatingRow.business_name || activatingRow.owner_email}`;
   renderPlanButtons();
   setMsg(el("modalMsg"), "", "");
@@ -755,6 +765,24 @@ function renderPlanButtons() {
   el("planButtons").querySelectorAll("button[data-tier]").forEach((btn) => {
     btn.addEventListener("click", () => { selectedTier = btn.getAttribute("data-tier"); renderPlanButtons(); });
   });
+  renderModalPreview();
+}
+
+// Shows exactly what this click will do to valid_until, so a second
+// accidental click on an already-active business is obvious before it
+// happens, instead of silently stacking extra paid days on top.
+function renderModalPreview() {
+  if (!activatingRow) return;
+  const plan = PLAN_TIERS.find((p) => p.id === selectedTier);
+  const now = new Date();
+  const currentValidUntil = activatingRow.valid_until ? new Date(activatingRow.valid_until) : null;
+  const base = currentValidUntil && currentValidUntil > now ? currentValidUntil : now;
+  const newValidUntil = new Date(base.getTime() + plan.periodDays * 86400000);
+  const currentLabel = currentValidUntil ? currentValidUntil.toLocaleDateString() : "—";
+  const alreadyActive = currentValidUntil && currentValidUntil > now;
+  el("modalPreview").innerHTML = alreadyActive
+    ? `<strong>Already active until ${currentLabel}.</strong> Activating again will extend it to <strong>${newValidUntil.toLocaleDateString()}</strong>. Make sure this is a new payment, not one already applied.`
+    : `Currently valid until ${currentLabel}. This will set it to <strong>${newValidUntil.toLocaleDateString()}</strong>.`;
 }
 
 el("modalCancel").addEventListener("click", () => hide(el("modalBackdrop")));
