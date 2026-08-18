@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>SheshaBiz — control</title>
+<style>
+  :root {
+    --paper: #f7f5f2;
+    --surface: #ffffff;
+    --ink: #1c1a17;
+    --ink-soft: #5b564e;
+    --ink-faint: #948d80;
+    --line: #e5e0d8;
+    --brand: #b5501f;
+    --brand-tint: #fbe9de;
+    --brand-deep: #7c360f;
+    --error: #b3261e;
+    --error-tint: #fbe6e4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 20px; font-weight: 800; margin: 0; }
+  .sub { color: var(--ink-soft); font-size: 14px; margin: 4px 0 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-faint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .03em; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-size: 15px;
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  button.primary { background: var(--brand); color: #fff; }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
+  button.ghost:hover { background: rgba(0,0,0,.04); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .msg { border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-top: 12px; }
+  .msg.error { background: var(--error-tint); color: var(--error); }
+  .msg.ok { background: var(--brand-tint); color: var(--brand-deep); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-faint); font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .pill.trialing { background: #dbeafe; color: #1d4ed8; }
+  .pill.active { background: var(--brand-tint); color: var(--brand-deep); }
+  .pill.lapsed { background: var(--error-tint); color: var(--error); }
+  .tablewrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--line); border-radius: 16px; }
+  .empty { padding: 32px; text-align: center; color: var(--ink-faint); }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(20,16,10,.4); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal { background: var(--surface); border-radius: 16px; padding: 20px; max-width: 380px; width: 100%; }
+  .plan-btn { display: flex; justify-content: space-between; width: 100%; text-align: left; background: var(--paper); border: 1px solid var(--line); margin-bottom: 8px; }
+  .plan-btn.selected { border-color: var(--brand); background: var(--brand-tint); }
+  .hidden { display: none !important; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .logout { font-size: 12px; color: var(--ink-faint); background: none; border: none; text-decoration: underline; padding: 0; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>SheshaBiz — control</h1>
+      <p class="sub" id="subline">Not linked from anywhere in the app. Bookmark this page.</p>
+    </div>
+    <button class="logout hidden" id="logoutBtn">Log out</button>
+  </div>
+
+  <!-- Logged out / email step -->
+  <div class="card" id="emailStep">
+    <label for="emailInput">Email</label>
+    <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="sendCodeBtn">Send code</button>
+    </div>
+    <div id="emailMsg"></div>
+  </div>
+
+  <!-- Code step -->
+  <div class="card hidden" id="codeStep">
+    <label for="codeInput">6-digit code</label>
+    <input id="codeInput" type="text" inputmode="numeric" maxlength="6" placeholder="123456" />
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="verifyBtn">Verify</button>
+      <button class="ghost" id="resendBtn">Resend</button>
+      <button class="ghost" id="backBtn">Change email</button>
+    </div>
+    <div id="codeMsg"></div>
+  </div>
+
+  <!-- Not authorized -->
+  <div class="card hidden" id="notAuthorized">
+    <p class="sub" id="notAuthorizedText">Logged in, but this account isn't authorized for the control dashboard.</p>
+    <div class="row" id="notAuthorizedRetry" style="margin-top:10px;display:none">
+      <button class="ghost" id="retryAuthBtn">Try again</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="hidden" id="dashboard">
+    <div class="card">
+      <div class="row">
+        <input id="searchInput" placeholder="Search by business name or email…" style="max-width:320px" />
+        <span class="sub" id="countLabel"></span>
+        <button class="ghost" id="refreshBtn" style="margin-left:auto">Refresh</button>
+      </div>
+      <div id="dashMsg"></div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Owner email</th>
+              <th>Status</th>
+              <th>Plan</th>
+              <th>Trial started</th>
+              <th>Valid until</th>
+              <th>Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <h2 id="modalTitle" style="margin:0 0 4px;font-size:16px;"></h2>
+    <p class="sub" style="margin:0 0 12px;">Pick the plan this payment covers.</p>
+    <div id="planButtons"></div>
+    <div id="modalMsg"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:8px;">
+      <button class="ghost" id="modalCancel">Cancel</button>
+      <button class="primary" id="modalConfirm">Activate</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Deliberately no third-party CDN dependency (not even the Supabase JS SDK) —
+// this is a critical, rarely-loaded tool, so it talks to Supabase's plain
+// REST/GoTrue HTTP API directly with fetch(), the same way the Android app's
+// SupabaseAuthClient/SupabaseRestClient do. One fewer thing that can break.
+const SUPABASE_URL = "https://djeipbwcyfaxjlllazbl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_nuoqwOSuf6pJcTaj9lrrDg_hxgLHiHK";
+const SESSION_KEY = "sheshabiz_control_session";
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
+}
+function setSession(session) { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+// Both helpers below catch fetch()-level failures (offline, DNS, connection
+// reset — not just HTTP error statuses) and return a normal {ok:false}/
+// {error} shape instead of throwing, so a network blip always leaves the UI
+// with a message and re-enabled buttons rather than stuck mid-request.
+
+async function authFetch(path, body) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 0, data: { msg: "Couldn't reach the server. Check your connection and try again." } };
+  }
+}
+
+async function rpc(name, args) {
+  const session = getSession();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session ? session.access_token : SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args || {}),
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { /* non-JSON error body */ }
+    if (!res.ok) {
+      const message = (data && (data.message || data.error_description || data.error)) || text || `Request failed (${res.status})`;
+      return { error: { message } };
+    }
+    return { data };
+  } catch {
+    return { error: { message: "Couldn't reach the server. Check your connection and try again.", network: true } };
+  }
+}
+
+const PLAN_TIERS = [
+  { id: "monthly", label: "Monthly", priceLabel: "R30", periodDays: 30 },
+  { id: "quarterly", label: "3 Months", priceLabel: "R70 total", periodDays: 90 },
+  { id: "biannual", label: "6 Months", priceLabel: "R120 total", periodDays: 180 },
+  { id: "annual", label: "1 Year", priceLabel: "R200 total", periodDays: 365 },
+];
+
+const el = (id) => document.getElementById(id);
+const emailStep = el("emailStep"), codeStep = el("codeStep"), notAuthorized = el("notAuthorized"), dashboard = el("dashboard");
+let pendingEmail = "";
+let rows = [];
+let activatingRow = null;
+let selectedTier = "monthly";
+
+function show(node) { node.classList.remove("hidden"); }
+function hide(node) { node.classList.add("hidden"); }
+function setMsg(node, text, kind) {
+  node.innerHTML = text ? `<div class="msg ${kind}">${text}</div>` : "";
+}
+
+async function checkSession() {
+  const session = getSession();
+  if (!session) {
+    hide(codeStep); hide(notAuthorized); hide(dashboard);
+    show(emailStep);
+    el("logoutBtn").classList.add("hidden");
+    el("subline").textContent = "Not linked from anywhere in the app. Bookmark this page.";
+    return;
+  }
+  el("logoutBtn").classList.remove("hidden");
+  el("subline").textContent = `Logged in as ${session.email}`;
+  hide(emailStep); hide(codeStep);
+  const { data, error } = await rpc("is_admin");
+  if (error && error.network) {
+    // A connectivity blip is not the same as "you're not the admin" — say so
+    // plainly and offer a retry, rather than implying access was denied.
+    hide(dashboard);
+    el("notAuthorizedText").textContent = error.message;
+    el("notAuthorizedRetry").style.display = "flex";
+    show(notAuthorized);
+    return;
+  }
+  if (error || !data) {
+    hide(dashboard);
+    el("notAuthorizedText").textContent = "Logged in, but this account isn't authorized for the control dashboard.";
+    el("notAuthorizedRetry").style.display = "none";
+    show(notAuthorized);
+    return;
+  }
+  hide(notAuthorized);
+  show(dashboard);
+  await loadBusinesses();
+}
+
+el("sendCodeBtn").addEventListener("click", async () => {
+  const email = el("emailInput").value.trim();
+  if (!email) { setMsg(el("emailMsg"), "Enter an email address.", "error"); return; }
+  el("sendCodeBtn").disabled = true;
+  setMsg(el("emailMsg"), "", "");
+  const { ok, status, data } = await authFetch("/otp", { email, create_user: true });
+  el("sendCodeBtn").disabled = false;
+  if (!ok) {
+    const msg = status === 429 ? "Please wait before requesting another code." : (data.msg || data.error_description || "Couldn't send the code.");
+    setMsg(el("emailMsg"), msg, "error");
+    return;
+  }
+  pendingEmail = email;
+  hide(emailStep);
+  show(codeStep);
+  setMsg(el("codeMsg"), `Code sent to ${email}.`, "ok");
+});
+
+el("resendBtn").addEventListener("click", () => el("sendCodeBtn").click());
+el("backBtn").addEventListener("click", () => { hide(codeStep); show(emailStep); setMsg(el("codeMsg"), "", ""); });
+
+el("verifyBtn").addEventListener("click", async () => {
+  const token = el("codeInput").value.trim();
+  if (token.length !== 6) { setMsg(el("codeMsg"), "Enter the 6-digit code.", "error"); return; }
+  el("verifyBtn").disabled = true;
+  const { ok, data } = await authFetch("/verify", { type: "email", email: pendingEmail, token });
+  el("verifyBtn").disabled = false;
+  if (!ok || !data.access_token) { setMsg(el("codeMsg"), "That code is incorrect or expired.", "error"); return; }
+  setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    email: (data.user && data.user.email) || pendingEmail,
+  });
+  await checkSession();
+});
+
+el("logoutBtn").addEventListener("click", async () => {
+  clearSession();
+  await checkSession();
+});
+
+el("refreshBtn").addEventListener("click", () => loadBusinesses());
+el("retryAuthBtn").addEventListener("click", () => checkSession());
+el("searchInput").addEventListener("input", renderRows);
+
+async function loadBusinesses() {
+  setMsg(el("dashMsg"), "", "");
+  const { data, error } = await rpc("admin_list_businesses");
+  if (error) {
+    setMsg(el("dashMsg"), error.message || "Couldn't load businesses.", "error");
+    return;
+  }
+  rows = data || [];
+  renderRows();
+}
+
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString() : "—"; }
+function displayStatus(row) {
+  if (!row.is_active) return "lapsed";
+  return row.status === "active" ? "active" : "trialing";
+}
+const statusLabel = { trialing: "Trialing", active: "Active", lapsed: "Lapsed" };
+
+function renderRows() {
+  const q = el("searchInput").value.trim().toLowerCase();
+  const filtered = q
+    ? rows.filter((r) => (r.business_name || "").toLowerCase().includes(q) || (r.owner_email || "").toLowerCase().includes(q))
+    : rows;
+  el("countLabel").textContent = `${filtered.length} of ${rows.length} business${rows.length === 1 ? "" : "es"}`;
+  const tbody = el("tbody");
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">${rows.length === 0 ? "No businesses yet." : "No businesses match your search."}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map((row) => {
+    const status = displayStatus(row);
+    return `<tr>
+      <td><strong>${row.business_name || "—"}</strong></td>
+      <td>${row.owner_email}</td>
+      <td><span class="pill ${status}">${statusLabel[status]}</span></td>
+      <td>${row.plan_tier || "—"}</td>
+      <td>${fmtDate(row.trial_started_at)}</td>
+      <td>${fmtDate(row.valid_until)}</td>
+      <td>${row.is_active ? "Yes" : "No"}</td>
+      <td><button class="ghost" data-id="${row.business_id}">Activate</button></td>
+    </tr>`;
+  }).join("");
+  tbody.querySelectorAll("button[data-id]").forEach((btn) => {
+    btn.addEventListener("click", () => openModal(btn.getAttribute("data-id")));
+  });
+}
+
+function openModal(businessId) {
+  activatingRow = rows.find((r) => r.business_id === businessId);
+  if (!activatingRow) return;
+  selectedTier = "monthly";
+  el("modalTitle").textContent = `Activate ${activatingRow.business_name || activatingRow.owner_email}`;
+  renderPlanButtons();
+  setMsg(el("modalMsg"), "", "");
+  show(el("modalBackdrop"));
+}
+
+function renderPlanButtons() {
+  el("planButtons").innerHTML = PLAN_TIERS.map((p) => `
+    <button type="button" class="plan-btn row ${p.id === selectedTier ? "selected" : ""}" data-tier="${p.id}">
+      <span><strong>${p.label}</strong></span><span>${p.priceLabel}</span>
+    </button>`).join("");
+  el("planButtons").querySelectorAll("button[data-tier]").forEach((btn) => {
+    btn.addEventListener("click", () => { selectedTier = btn.getAttribute("data-tier"); renderPlanButtons(); });
+  });
+}
+
+el("modalCancel").addEventListener("click", () => hide(el("modalBackdrop")));
+
+el("modalConfirm").addEventListener("click", async () => {
+  if (!activatingRow) return;
+  const plan = PLAN_TIERS.find((p) => p.id === selectedTier);
+  el("modalConfirm").disabled = true;
+  const { error } = await rpc("admin_activate_business", {
+    target_business_id: activatingRow.business_id,
+    tier: selectedTier,
+    period_days: plan.periodDays,
+  });
+  el("modalConfirm").disabled = false;
+  if (error) { setMsg(el("modalMsg"), error.message || "Couldn't activate this business.", "error"); return; }
+  hide(el("modalBackdrop"));
+  setMsg(el("dashMsg"), `Activated ${activatingRow.business_name || activatingRow.owner_email}.`, "ok");
+  await loadBusinesses();
+});
+
+checkSession();
+</script>
+</body>
+</html>
