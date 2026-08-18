@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Copy, MessageCircle } from "lucide-react";
 import { useAppData } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import { EFT_BANKING_DETAILS, PLAN_TIERS, buildWhatsAppLink, type PlanTierId } from "@/lib/plans";
 
 function CopyableField({ label, value }: { label: string; value: string }) {
@@ -43,6 +44,20 @@ export function SubscribePanel({ initialPlan = null }: { initialPlan?: PlanTierI
   const { data } = useAppData();
   const { email } = useAuth();
   const [selected, setSelected] = useState<PlanTierId | null>(initialPlan);
+
+  // Best-effort signal for the admin dashboard — records which tier the
+  // user is looking at as soon as this component shows the EFT/WhatsApp
+  // pay-confirm view for it (manual pick or `initialPlan` pre-fill alike).
+  // Never blocks or interrupts the actual payment flow: fire-and-forget,
+  // errors are logged and swallowed.
+  useEffect(() => {
+    if (!selected) return;
+    supabase.rpc("set_pending_plan", { tier: selected }).then(({ error }) => {
+      if (error) {
+        console.error("set_pending_plan failed:", error.message);
+      }
+    });
+  }, [selected]);
 
   const businessName = data.business.name || "your business";
   const plan = PLAN_TIERS.find((p) => p.id === selected) ?? null;
