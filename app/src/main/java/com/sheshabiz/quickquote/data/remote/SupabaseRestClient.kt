@@ -60,6 +60,22 @@ class SupabaseRestClient(private val authPreferences: AuthPreferences) {
         }.getOrNull()
     }
 
+    /** Best-effort admin-visibility signal: records which paid tier ('monthly', 'quarterly',
+     * 'biannual', or 'annual') the logged-in caller is currently looking at on the pay-confirm
+     * screen, via the `set_pending_plan` RPC, so the admin dashboard can show "wants R70" before
+     * the customer has actually paid. Scoped server-side to the caller's own business via
+     * `auth.uid()`. Fire-and-forget by design — callers should log/ignore a failure rather than
+     * surface it or block on it. */
+    suspend fun setPendingPlan(tier: String): Result<Unit> {
+        val body = JSONObject().put("tier", tier).toString()
+        val (code, _) = post("rpc/set_pending_plan", body)
+        return if (code in 200..299) {
+            Result.success(Unit)
+        } else {
+            Result.failure(IOException("set_pending_plan failed: HTTP $code"))
+        }
+    }
+
     /** GET under `/rest/v1/`, e.g. `get("quotes?business_id=eq.$id&updated_at=gt.$since")`.
      * Returns the HTTP status code and raw response body (success or error). */
     suspend fun get(path: String, extraHeaders: Map<String, String> = emptyMap()): Pair<Int, String?> =

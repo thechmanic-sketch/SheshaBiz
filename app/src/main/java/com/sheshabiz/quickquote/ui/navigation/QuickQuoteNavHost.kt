@@ -373,7 +373,9 @@ fun QuickQuoteNavHost(container: AppContainer, recoveryTokens: PasswordRecoveryT
                 val planIdArg = entry.arguments?.getString(Routes.SUBSCRIPTION_PLAN_ARG)
                 val vm = viewModel<SubscriptionViewModel>(
                     key = "subscription_${planIdArg ?: "none"}",
-                    factory = viewModelFactory { SubscriptionViewModel(container.businessRepository, planIdArg) }
+                    factory = viewModelFactory {
+                        SubscriptionViewModel(container.businessRepository, planIdArg, container.supabaseRestClient)
+                    }
                 )
                 SubscriptionScreen(
                     viewModel = vm,

@@ -2,6 +2,7 @@ package com.sheshabiz.quickquote.ui.subscription
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sheshabiz.quickquote.data.remote.SupabaseRestClient
 import com.sheshabiz.quickquote.data.repository.BusinessRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,15 @@ enum class SubscriptionPlan(val displayName: String, val priceLabel: String, val
 
     /** Short "<name> (R<price>)" form used in the WhatsApp confirmation message. */
     val whatsappLabel: String get() = "$displayName ($priceLabel)"
+
+    /** Tier id expected by the `set_pending_plan` RPC / `businesses.pending_plan_tier` column. */
+    val tierId: String
+        get() = when (this) {
+            MONTHLY -> "monthly"
+            THREE_MONTHS -> "quarterly"
+            SIX_MONTHS -> "biannual"
+            ONE_YEAR -> "annual"
+        }
 }
 
 enum class SubscriptionStep { PICK_PLAN, PAY_CONFIRM }
@@ -34,12 +44,15 @@ class SubscriptionViewModel(
     /** [SubscriptionPlan.name] of a plan already chosen elsewhere (e.g. on the signup
      * "how would you like to start?" step) — when present and valid, the screen opens straight
      * on [SubscriptionStep.PAY_CONFIRM] for that plan instead of making the user pick again. */
-    preselectedPlanId: String? = null
+    preselectedPlanId: String? = null,
+    private val supabaseRestClient: SupabaseRestClient? = null
 ) : ViewModel() {
 
+    private val preselectedPlan: SubscriptionPlan? = preselectedPlanId
+        ?.let { id -> runCatching { SubscriptionPlan.valueOf(id) }.getOrNull() }
+
     private val _uiState = MutableStateFlow(
-        preselectedPlanId
-            ?.let { id -> runCatching { SubscriptionPlan.valueOf(id) }.getOrNull() }
+        preselectedPlan
             ?.let { plan -> SubscriptionUiState(step = SubscriptionStep.PAY_CONFIRM, selectedPlan = plan) }
             ?: SubscriptionUiState()
     )
@@ -50,10 +63,25 @@ class SubscriptionViewModel(
             val name = businessRepository.getProfile()?.businessName.orEmpty()
             _uiState.update { it.copy(businessName = name) }
         }
+        // State may already be seeded straight into PAY_CONFIRM (the preselected-from-signup
+        // path) — report that tier too, not just the manual-pick path in [selectPlan].
+        preselectedPlan?.let { reportPendingPlan(it) }
     }
 
     fun selectPlan(plan: SubscriptionPlan) {
         _uiState.update { it.copy(selectedPlan = plan, step = SubscriptionStep.PAY_CONFIRM) }
+        reportPendingPlan(plan)
+    }
+
+    /** Fire-and-forget admin-visibility signal (see [SupabaseRestClient.setPendingPlan]) — never
+     * blocks the UI and never surfaces an error; this is a best-effort dashboard hint, not
+     * something the user's payment flow depends on. */
+    private fun reportPendingPlan(plan: SubscriptionPlan) {
+        val client = supabaseRestClient ?: return
+        viewModelScope.launch {
+            client.setPendingPlan(plan.tierId)
+                .onFailure { /* ignored — best-effort admin-visibility signal only */ }
+        }
     }
 
     /** Step-2 → step-1 in-screen back action (distinct from the screen's nav back). */
