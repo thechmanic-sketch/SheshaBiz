@@ -1,21 +1,24 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Printer, Share2, ShoppingCart } from "lucide-react";
+import { Printer, Share2, Download, ShoppingCart } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { useAppData } from "@/lib/store";
 import { lineItemsTotal } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { shareText } from "@/lib/share";
+import { downloadDocumentAsPdf } from "@/lib/pdf";
 
 const methodLabel = { cash: "Cash", card: "Card", eft: "EFT" } as const;
+const PREVIEW_ID = "receipt-document-preview";
 
 function ReceiptInner() {
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const { data } = useAppData();
+  const [downloading, setDownloading] = useState(false);
   const sale = data.sales.find((s) => s.id === id);
 
   if (!sale) {
@@ -47,6 +50,16 @@ function ReceiptInner() {
     shareText(`Receipt ${sale!.number}`, summary);
   }
 
+  async function handleDownloadPdf() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadDocumentAsPdf(PREVIEW_ID, `Receipt-${sale!.number}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div>
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 no-print">
@@ -59,6 +72,14 @@ function ReceiptInner() {
           >
             <Printer size={15} />
             Print
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+          >
+            <Download size={15} />
+            {downloading ? "Preparing…" : "Download PDF"}
           </button>
           <button
             type="button"
@@ -80,6 +101,7 @@ function ReceiptInner() {
 
       <div className="mt-5">
         <DocumentPreview
+          id={PREVIEW_ID}
           kind="Receipt"
           number={sale.number}
           date={sale.createdAt}

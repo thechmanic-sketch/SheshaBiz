@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Printer, Share2, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, Printer, Share2, Download, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 import { InvoiceBadge } from "@/components/ui/Badge";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
@@ -13,6 +13,9 @@ import { effectiveInvoiceStatus, quoteTotals } from "@/lib/types";
 import { useToday } from "@/lib/useToday";
 import { formatCurrency } from "@/lib/currency";
 import { shareText } from "@/lib/share";
+import { downloadDocumentAsPdf } from "@/lib/pdf";
+
+const PREVIEW_ID = "invoice-document-preview";
 
 function ActionButton({
   onClick,
@@ -52,6 +55,7 @@ function InvoiceViewInner() {
   const { data, updateInvoice, deleteInvoice } = useAppData();
   const { guard } = useTrialGate();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const today = useToday();
 
   const invoice = data.invoices.find((i) => i.id === id);
@@ -77,6 +81,16 @@ function InvoiceViewInner() {
       `Total: ${formatCurrency(totals.total, data.business.country)}`,
     ].join("\n");
     shareText(`Invoice ${invoice!.number}`, summary);
+  }
+
+  async function handleDownloadPdf() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadDocumentAsPdf(PREVIEW_ID, `Invoice-${invoice!.number}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -108,6 +122,7 @@ function InvoiceViewInner() {
             />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
+          <ActionButton onClick={handleDownloadPdf} icon={Download} label={downloading ? "Preparing…" : "Download PDF"} />
           <ActionButton onClick={handleShare} icon={Share2} label="Share" />
           <ActionButton onClick={() => guard(() => setConfirmDelete(true))} icon={Trash2} label="Delete" danger />
         </div>
@@ -115,6 +130,7 @@ function InvoiceViewInner() {
 
       <div className="mt-5">
         <DocumentPreview
+          id={PREVIEW_ID}
           kind="Tax Invoice"
           number={invoice.number}
           date={invoice.createdAt}

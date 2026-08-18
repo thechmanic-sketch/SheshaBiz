@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Printer, Share2, Send, CheckCircle2, XCircle, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Pencil, Printer, Share2, Download, Send, CheckCircle2, XCircle, ArrowRightLeft, Trash2 } from "lucide-react";
 import { QuoteBadge } from "@/components/ui/Badge";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
@@ -12,6 +12,9 @@ import { useTrialGate } from "@/lib/trial";
 import { quoteTotals } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { shareText } from "@/lib/share";
+import { downloadDocumentAsPdf } from "@/lib/pdf";
+
+const PREVIEW_ID = "quote-document-preview";
 
 function ActionButton({
   onClick,
@@ -51,6 +54,7 @@ function QuoteViewInner() {
   const { data, updateQuote, deleteQuote, convertQuoteToInvoice } = useAppData();
   const { guard } = useTrialGate();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const quote = data.quotes.find((q) => q.id === id);
 
@@ -86,6 +90,16 @@ function QuoteViewInner() {
       .filter(Boolean)
       .join("\n");
     shareText(`Quote ${quote!.number}`, summary);
+  }
+
+  async function handleDownloadPdf() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadDocumentAsPdf(PREVIEW_ID, `Quote-${quote!.number}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -126,6 +140,7 @@ function QuoteViewInner() {
             <ActionButton onClick={() => guard(handleConvert)} icon={ArrowRightLeft} label="Convert to invoice" primary />
           )}
           <ActionButton onClick={() => window.print()} icon={Printer} label="Print" />
+          <ActionButton onClick={handleDownloadPdf} icon={Download} label={downloading ? "Preparing…" : "Download PDF"} />
           <ActionButton onClick={handleShare} icon={Share2} label="Share" />
           <ActionButton onClick={() => guard(() => setConfirmDelete(true))} icon={Trash2} label="Delete" danger />
         </div>
@@ -143,6 +158,7 @@ function QuoteViewInner() {
 
       <div className="mt-5">
         <DocumentPreview
+          id={PREVIEW_ID}
           kind="Quotation"
           number={quote.number}
           date={quote.createdAt}

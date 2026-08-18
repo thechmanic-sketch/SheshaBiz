@@ -5,6 +5,7 @@ import { useAppData } from "@/lib/store";
 import type { LineItem } from "@/lib/types";
 
 export function DocumentPreview({
+  id,
   kind,
   number,
   date,
@@ -18,6 +19,7 @@ export function DocumentPreview({
   extraRows,
   footerNote,
 }: {
+  id?: string;
   kind: string;
   number: string;
   date: string;
@@ -35,7 +37,10 @@ export function DocumentPreview({
   const { business } = data;
 
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-surface p-8 print:rounded-none print:border-0 print:p-0">
+    <div
+      id={id}
+      className="mx-auto max-w-2xl rounded-2xl border border-line bg-surface p-8 print:rounded-none print:border-0 print:p-0"
+    >
       <div className="flex items-start justify-between border-b border-line pb-5">
         <div className="flex items-center gap-3">
           {business.logoDataUrl ? (
