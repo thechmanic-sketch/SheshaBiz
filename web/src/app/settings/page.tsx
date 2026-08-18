@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut, RefreshCw, CreditCard, LayoutDashboard } from "lucide-react";
+import { Download, Upload, RotateCcw, ShieldCheck, ShieldOff, LogIn, LogOut, RefreshCw, CreditCard } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { PinSetupModal } from "@/components/settings/PinSetupModal";
@@ -356,23 +356,6 @@ export default function SettingsPage() {
               >
                 <CreditCard size={15} />
                 {subscriptionState === "lapsed" ? "Subscribe now" : "View plans / Upgrade"}
-              </Link>
-            </div>
-          </Card>
-        )}
-
-        {email === "thechmanic@gmail.com" && (
-          <Card title="Admin">
-            <p className="text-sm text-ink-soft">
-              You&apos;re logged in as the SheshaBiz admin account.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/admin"
-                className="flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-black/[.04] dark:hover:bg-white/[.06]"
-              >
-                <LayoutDashboard size={15} />
-                Control dashboard
               </Link>
             </div>
           </Card>
