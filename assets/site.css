@@ -660,10 +660,10 @@ footer {
 footer .flockup { display: flex; align-items: center; gap: 8px; }
 footer .flockup img { width: 18px; height: 18px; }
 .footer-credit { margin-top: 14px; font-size: 0.78rem; color: var(--ink-faint); text-align: center; }
-.footer-stores { display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
-.store-badge { display: flex; align-items: center; padding: 9px 16px; border-radius: 10px; background: #101416; color: #fff; opacity: .6; }
-.store-badge-copy { display: flex; flex-direction: column; font-size: 0.8rem; font-weight: 700; line-height: 1.25; text-align: left; }
-.store-badge-copy small { font-size: 0.6rem; font-weight: 500; letter-spacing: 0.01em; opacity: .82; }
+.footer-stores { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 18px; }
+.footer-stores-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+.footer-stores-badges { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.footer-stores-badges img { height: 40px; width: auto; opacity: .55; filter: grayscale(0.15); }
 .footer-credit a { text-decoration: underline; text-underline-offset: 2px; }
 
 @media (max-width: 860px) {
