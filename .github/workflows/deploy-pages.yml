@@ -47,9 +47,26 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /SheshaBiz/app
         run: npm run build
 
+      - name: Fetch latest APK/EXE for direct-download links
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/downloads
+          apk_tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName,isDraft,isPrerelease \
+            --jq '[.[] | select(.isDraft == false and .isPrerelease == false and (.tagName | startswith("apk-run-")))][0].tagName')
+          exe_tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName,isDraft,isPrerelease \
+            --jq '[.[] | select(.isDraft == false and .isPrerelease == false and (.tagName | startswith("desktop-run-")))][0].tagName')
+          if [ -n "$apk_tag" ]; then
+            gh release download "$apk_tag" --repo "$GITHUB_REPOSITORY" --pattern "*.apk" --dir dist/downloads --clobber
+            mv dist/downloads/*.apk dist/downloads/SheshaBiz.apk
+          fi
+          if [ -n "$exe_tag" ]; then
+            gh release download "$exe_tag" --repo "$GITHUB_REPOSITORY" --pattern "*.exe" --dir dist/downloads --clobber
+            mv dist/downloads/*.exe dist/downloads/SheshaBiz-Setup.exe
+          fi
+
       - name: Assemble combined site
         run: |
-          mkdir -p dist
           cp site/*.html dist/
           cp -r site/assets dist/assets
           mkdir -p dist/app
