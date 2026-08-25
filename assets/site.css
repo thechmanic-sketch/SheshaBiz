@@ -537,6 +537,16 @@ section { padding: 64px 0; }
   grid-template-columns: repeat(5, 1fr);
   gap: 14px;
 }
+.download-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.download-card .dicon { font-size: 2rem; }
+.download-card h3 { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.3rem; margin: 10px 0 4px; }
+.download-card .btn-light { width: 100%; justify-content: center; margin-top: 16px; }
 .plan-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -650,6 +660,11 @@ footer {
 footer .flockup { display: flex; align-items: center; gap: 8px; }
 footer .flockup img { width: 18px; height: 18px; }
 .footer-credit { margin-top: 14px; font-size: 0.78rem; color: var(--ink-faint); text-align: center; }
+.footer-stores { display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.store-badge { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: 10px; background: #101416; color: #fff; opacity: .6; }
+.store-badge-icon { font-size: 1.15rem; line-height: 1; }
+.store-badge-copy { display: flex; flex-direction: column; font-size: 0.8rem; font-weight: 700; line-height: 1.25; text-align: left; }
+.store-badge-copy small { font-size: 0.6rem; font-weight: 500; letter-spacing: 0.01em; opacity: .82; }
 .footer-credit a { text-decoration: underline; text-underline-offset: 2px; }
 
 @media (max-width: 860px) {
@@ -663,6 +678,7 @@ footer .flockup img { width: 18px; height: 18px; }
   .screens-row { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
   .devices-row { grid-template-columns: 1fr; }
   .pricing-row { grid-template-columns: repeat(2, 1fr); }
+  .download-row { grid-template-columns: 1fr; }
   .why-grid { grid-template-columns: 1fr; }
   .about-grid { grid-template-columns: 1fr; }
   .profile-hero { grid-template-columns: 1fr; text-align: center; justify-items: center; }
