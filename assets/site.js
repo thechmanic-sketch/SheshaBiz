@@ -57,4 +57,24 @@
     if (caption) caption.textContent = slides[0].getAttribute("data-caption") || "";
     restart();
   }
+
+  // Mobile nav toggle
+  var header = document.querySelector("header.nav");
+  var toggle = document.getElementById("navToggle");
+  if (header && toggle) {
+    var closeMenu = function () {
+      header.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    };
+    toggle.addEventListener("click", function () {
+      var isOpen = header.classList.toggle("open");
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+    header.querySelectorAll(".nav-links a").forEach(function (a) {
+      a.addEventListener("click", closeMenu);
+    });
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 860) closeMenu();
+    });
+  }
 })();
